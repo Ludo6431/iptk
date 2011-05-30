@@ -17,55 +17,47 @@
 #include "analyse.h"
 
 #include <glib.h>
-#include <gtk/gtk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
 
+#include "gtkviewer.h"
+
+// TODO: si on fourni un fichier de sauvegarde, il faut charger et sauvegarder les paramètres
 
 typedef struct {
-    GtkWidget *window;
-        GtkWidget *hbox;
-            GtkWidget *im_video;
-            GtkWidget *bt_run;
-
     int fd;
     struct v4l2_format fmt;
     unsigned int width, height;
 
     void *buffer;
     unsigned int size;
+
+    int mid_rawcam;
+    int mid_cam_balise1;
+    int mid_cam_balise2;
+    int mid_cam_balise3;
+    int mid_cam_balise4;    // ennemi
 } context_t;
 
-int handle(GIOChannel *source, GIOCondition condition, context_t *ctx);
 int update(context_t *ctx);
-void go(GtkWidget *widget, context_t *ctx) {
-    g_timeout_add(1000/4, update, ctx); return;
-
-    GIOChannel *ch = g_io_channel_unix_new(ctx->fd);
-    g_io_channel_set_encoding(ch, NULL, NULL);  // this is binary data
-
-    g_io_add_watch(ch, G_IO_IN | G_IO_PRI, (GIOFunc)handle, ctx);
-}
-
 int handle(GIOChannel *source, GIOCondition condition, context_t *ctx) {
-    update(ctx);
-
-    return TRUE;
+    return update(ctx);
 }
 
 int update(context_t *ctx) {
-    GdkPixbuf *pb_video = NULL;
     int ret = video_read(ctx->fd, ctx->buffer, ctx->size);
 printf("ret=%d\n", ret);
 //usleep(10000);
+
+    unsigned char *data = (unsigned char *)malloc(640*480*3);
 
     switch(ctx->fmt.fmt.pix.pixelformat) {
     case V4L2_PIX_FMT_SBGGR8: {
         unsigned char *ddata = (unsigned char *)malloc(640*480*3);
         sbggr8_to_bgr(ctx->buffer, ddata, ctx->width, ctx->height);
+//memcpy(ddata, ctx->buffer, ret);
 
-        analyse(ddata, ctx->width, ctx->height);
+        gv_media_update(ctx->mid_rawcam, ddata, ctx->width, ctx->height, (gv_destroy)free, NULL);
 
-        pb_video = gdk_pixbuf_new_from_data(ddata, GDK_COLORSPACE_RGB, FALSE, 8, ctx->width, ctx->height, ctx->width*3, (GdkPixbufDestroyNotify)free, NULL);
+        memcpy(data, ddata, 640*480*3);
         break;
     }
     case V4L2_PIX_FMT_JPEG: {
@@ -79,12 +71,12 @@ printf("ret=%d\n", ret);
         if(tinyjpeg_decode(jdec, TINYJPEG_FMT_RGB24) < 0) mexit(1, tinyjpeg_get_errorstring(jdec));
         tinyjpeg_get_components(jdec, components);
 
-        analyse(components[0], ctx->width, ctx->height);
-
         void jpegfree(void *data, struct jdec_private *jdec) {
             tinyjpeg_free(jdec);
         }
-        pb_video = gdk_pixbuf_new_from_data(components[0], GDK_COLORSPACE_RGB, FALSE, 8, ctx->width, ctx->height, ctx->width*3, (GdkPixbufDestroyNotify)jpegfree, jdec);
+        gv_media_update(ctx->mid_rawcam, components[0], ctx->width, ctx->height, (gv_destroy)jpegfree, jdec);
+
+        memcpy(data, components[0], 640*480*3);
         break;
     }
     default:
@@ -92,16 +84,14 @@ printf("ret=%d\n", ret);
         break;
     }
 
-    gtk_image_set_from_pixbuf(GTK_IMAGE(ctx->im_video), pb_video);
-    gtk_widget_queue_draw(GTK_WIDGET(ctx->im_video));
-    g_object_unref(pb_video);
+    analyse(data, ctx->width, ctx->height);
+    gv_media_update(ctx->mid_cam_balise1, data, ctx->width, ctx->height, (gv_destroy)free, NULL);
 
     return TRUE;
 }
 
 int main(int argc, char *argv[]) {
     context_t ctx;
-    GdkPixbuf *pb_video;  // this is a GObject => we need to unref
 
     bzero(&ctx, sizeof(ctx));
 
@@ -125,35 +115,24 @@ printf("got  :%dx%d %c%c%c%c\n", ctx.fmt.fmt.pix.width, ctx.fmt.fmt.pix.height, 
 
 printf("size=%d\n", ctx.size);
 
-    // init GUI
-    gtk_init(&argc, &argv);
+    // init viewer
+    gv_init(&argc, &argv, "Visu balise robot en temps réel", "Bienvenue ici!\n\nIl y aura une aide ici.");
 
-    // the main window
-    ctx.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    g_signal_connect(ctx.window, "delete-event", G_CALLBACK(gtk_main_quit), NULL);
+    // add some parameters and video sources
+    ctx.mid_rawcam = gv_media_new("Caméra pure", "Caméra sans traitement", ctx.width, ctx.height);
+    ctx.mid_cam_balise1 = gv_media_new("Caméra filtrée", "Caméra après traitement", ctx.width, ctx.height);
 
-        // the main horizontal box
-        ctx.hbox = gtk_hbox_new(FALSE, 0);
-        gtk_container_add(GTK_CONTAINER(ctx.window), ctx.hbox);
+    // get video
+#if 1
+    g_timeout_add(1000/4, update, &ctx);
+#else
+    GIOChannel *ch = g_io_channel_unix_new(ctx.fd);
+    g_io_channel_set_encoding(ch, NULL, NULL);  // this is binary data
+    g_io_add_watch(ch, G_IO_IN | G_IO_PRI, (GIOFunc)handle, &ctx);
+#endif
 
-            // the video image
-            pb_video = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, ctx.width, ctx.height);
-            ctx.im_video = gtk_image_new_from_pixbuf(pb_video);
-            g_object_unref(pb_video);
-            gtk_container_add(GTK_CONTAINER(ctx.hbox), ctx.im_video);
-            gtk_widget_show(ctx.im_video);
-
-            // the run button
-            ctx.bt_run = gtk_button_new_with_label("Run!");
-            g_signal_connect(G_OBJECT(ctx.bt_run), "clicked", G_CALLBACK(go), &ctx);
-            gtk_container_add(GTK_CONTAINER(ctx.hbox), ctx.bt_run);
-            gtk_widget_show(ctx.bt_run);
-
-        gtk_widget_show(ctx.hbox);
-
-    gtk_widget_show(ctx.window);
-
-    gtk_main();
+    // run viewer
+    gv_run();
 
     if(close(ctx.fd)<0)
         mexit (1, "close");

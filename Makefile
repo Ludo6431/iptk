@@ -1,6 +1,6 @@
 EXEC := code
-SRCDIRS := . bmpencoder tinyjpegdecoder
-INCDIRS := . bmpencoder tinyjpegdecoder
+SRCDIRS := . bmpencoder tinyjpegdecoder gtkviewer
+INCDIRS := . bmpencoder tinyjpegdecoder gtkviewer
 LIBS :=
 
 # --

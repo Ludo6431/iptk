@@ -4,7 +4,10 @@
 
 #include "analyse.h"
 
-void analyse(char *data, unsigned int width, unsigned int height) {
+unsigned int THR0 = 60;
+unsigned int THR1 = 25;
+
+void analyse(unsigned char *data, unsigned int width, unsigned int height) {
     unsigned char m, M, l, s, R, G, B;
     unsigned int t;
 
@@ -41,9 +44,6 @@ void analyse(char *data, unsigned int width, unsigned int height) {
                 s = 255 * (M - m) / (2*255 - (M + m));
 
             R = G = B = 0;
-
-            #define THR0 30
-            #define THR1 60
 
             // do test
             if(abs(M - m)>=THR0 && M>=0+THR0 && m<=255-THR0) {    // far enough from grey, white and black
