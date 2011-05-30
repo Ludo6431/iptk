@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <asm/types.h> 
@@ -9,14 +8,14 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <glib.h>
 
 #include "tinyjpeg.h"
 #include "bmpsave.h"
 #include "v4l2_wrapper.h"
 #include "outils.h"
 #include "analyse.h"
-
-#include <glib.h>
+#include "cust_params.h"
 
 #include "gtkviewer.h"
 
@@ -32,6 +31,7 @@ typedef struct {
 
     int mid_rawcam;
     int mid_cam_balise1;
+    param_t p_THR0, p_THR1;
     int mid_cam_balise2;
     int mid_cam_balise3;
     int mid_cam_balise4;    // ennemi
@@ -44,7 +44,7 @@ int handle(GIOChannel *source, GIOCondition condition, context_t *ctx) {
 
 int update(context_t *ctx) {
     int ret = video_read(ctx->fd, ctx->buffer, ctx->size);
-printf("ret=%d\n", ret);
+//printf("ret=%d\n", ret);
 //usleep(10000);
 
     unsigned char *data = (unsigned char *)malloc(640*480*3);
@@ -53,7 +53,6 @@ printf("ret=%d\n", ret);
     case V4L2_PIX_FMT_SBGGR8: {
         unsigned char *ddata = (unsigned char *)malloc(640*480*3);
         sbggr8_to_bgr(ctx->buffer, ddata, ctx->width, ctx->height);
-//memcpy(ddata, ctx->buffer, ret);
 
         gv_media_update(ctx->mid_rawcam, ddata, ctx->width, ctx->height, (gv_destroy)free, NULL);
 
@@ -118,13 +117,21 @@ printf("size=%d\n", ctx.size);
     // init viewer
     gv_init(&argc, &argv, "Visu balise robot en temps réel", "Bienvenue ici!\n\nIl y aura une aide ici.");
 
-    // add some parameters and video sources
+
+    // add some video sources
     ctx.mid_rawcam = gv_media_new("Caméra pure", "Caméra sans traitement", ctx.width, ctx.height);
     ctx.mid_cam_balise1 = gv_media_new("Caméra filtrée", "Caméra après traitement", ctx.width, ctx.height);
 
+    // add some realtime parameters
+    int g1 = gv_gparam_new("1 Params", "The first set of parameters");
+    param_init(&ctx.p_THR0, "THR0", "Value threshold", PT_INT, &THR0 /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
+    gv_param_add(g1, &ctx.p_THR0);
+    param_init(&ctx.p_THR1, "THR1", "Color threshold", PT_INT, &THR1 /* cf analyse.h */, 0 /* min */, 360/6 /* max */, 1 /* step */);
+    gv_param_add(g1, &ctx.p_THR1);
+
     // get video
 #if 1
-    g_timeout_add(1000/4, update, &ctx);
+    g_timeout_add(1000/4, (GSourceFunc)update, &ctx);
 #else
     GIOChannel *ch = g_io_channel_unix_new(ctx.fd);
     g_io_channel_set_encoding(ch, NULL, NULL);  // this is binary data

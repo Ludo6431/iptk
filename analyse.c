@@ -11,6 +11,7 @@ void analyse(unsigned char *data, unsigned int width, unsigned int height) {
     unsigned char m, M, l, s, R, G, B;
     unsigned int t;
 
+//printf("THR0=%d\nTHR1=%d\n", THR0, THR1);
     int i, j;
     for(j=0; j<height; j++)
         for(i=0; i<3*width; i+=3) {
