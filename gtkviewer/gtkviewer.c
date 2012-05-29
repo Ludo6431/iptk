@@ -56,6 +56,8 @@ void gv_init(int *pargc, char **pargv[], char *wtitle, char *help) {
 int gv_media_new(char *name, char *desc, unsigned int width, unsigned int height) {
     GtkWidget *label = gtk_label_new(name);
     gtk_widget_set_tooltip_text(label, desc);
+printf("__%dx%d__\n", width, height);
+
     GdkPixbuf *pb_video = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
     GtkWidget *content = gtk_image_new_from_pixbuf(pb_video);
     g_object_unref(pb_video);
@@ -86,7 +88,7 @@ void gv_media_del(int mid) {
 int gv_gparam_new(char *gname, char *gdesc) {
     GtkWidget *glabel = gtk_label_new(gname);
     gtk_widget_set_tooltip_text(glabel, gdesc);
-    GtkWidget *gvbox = gtk_vbox_new(FALSE, 0);
+    GtkWidget *gvbox = gtk_vbox_new(FALSE /* homogeneous */, 0);
 
     int ret = gtk_notebook_append_page(GTK_NOTEBOOK(_gv_nbparams), gvbox, glabel);
 
@@ -97,7 +99,7 @@ int gv_gparam_new(char *gname, char *gdesc) {
 }
 
 void gv_gparam_del(int gid) {
-    
+    // TODO
 }
 
 void pt_int_modified(GtkWidget *button, param_t *p) {
@@ -114,9 +116,10 @@ void gv_param_add(int gid, param_t *p) {
     if(p->desc)
         gtk_widget_set_tooltip_text(frame, p->desc);
     gtk_box_pack_start(GTK_BOX(gvbox), frame, FALSE /* expand */, FALSE /* fill */, 0 /* padding */);
-    GtkWidget *button;
+    GtkWidget *button = NULL;
 
     switch(p->type) {
+    default:
     case PT_BOOL:
         // TODO
         break;

@@ -25,6 +25,7 @@
 #endif
 
 void _mexit(int code, char *format, ...);
+inline void *memdup(void *data, unsigned int size);
 
 void sbggr8_to_bgr (const void* src, void* dst, int width, int height);
 

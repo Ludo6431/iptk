@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "outils.h"
 
@@ -14,6 +15,14 @@ void _mexit(int code, char *format, ...) {
     }
 
     exit(code);
+}
+
+inline void *memdup(void *data, unsigned int size) {
+    void *ret = malloc(size);
+    if(ret)
+        memcpy(ret, data, size);
+
+    return ret;
 }
 
 void sbggr8_to_bgr (const void* src, void* dst, int width, int height) {

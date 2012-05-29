@@ -1,10 +1,10 @@
 #ifndef _ANALYSE_H
 #define _ANALYSE_H
 
-extern unsigned int THR0;
-extern unsigned int THR1;
+#include "main.h"
 
-void analyse(unsigned char *data, unsigned int width, unsigned int height);
+void analyse_init(context_t *ctx);
+void analyse_update(context_t *ctx, unsigned char *data);
 
 #endif
 
