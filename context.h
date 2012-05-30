@@ -1,9 +1,9 @@
-#ifndef _MAIN_H
-#define _MAIN_H
+#ifndef _CONTEXT_H
+#define _CONTEXT_H
 
 #include <asm/types.h> 
 #include <linux/videodev2.h>
-#include "v4l2_wrapper.h"
+#include "video.h"
 
 typedef struct {
     // acquisition parameters

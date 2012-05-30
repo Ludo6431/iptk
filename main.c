@@ -11,14 +11,12 @@
 #include <glib.h>
 
 #include "bmpsave.h"
-#include "v4l2_wrapper.h"
-#include "outils.h"
-#include "analyse.h"
-#include "cust_params.h"
-
-#include "gtkviewer.h"
-
-#include "main.h"
+#include "video.h"
+#include "tools.h"
+#include "process.h"
+#include "param.h"
+#include "gv.h"
+#include "context.h"
 
 // TODO: si on fourni un fichier de sauvegarde, il faut charger et sauvegarder les paramètres
 

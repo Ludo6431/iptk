@@ -2,10 +2,10 @@
 #include <math.h>
 #include <string.h>
 
-#include "outils.h"
-#include "gtkviewer.h"
+#include "tools.h"
+#include "gv.h"
 
-#include "analyse.h"
+#include "process.h"
 
 
 // ----------------------------------------------------------------------------

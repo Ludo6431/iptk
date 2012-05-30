@@ -1,7 +1,7 @@
 #ifndef _GTKVIEWER_H
 #define _GTKVIEWER_H
 
-#include "cust_params.h"
+#include "param.h"
 
 void    gv_init         (int *pargc, char **pargv[], char *wtitle, char *help);
 

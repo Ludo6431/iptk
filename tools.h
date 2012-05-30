@@ -1,5 +1,5 @@
-#ifndef _OUTILS_H
-#define _OUTILS_H
+#ifndef _TOOLS_H
+#define _TOOLS_H
 
 #ifdef DEBUG
 #include <stdarg.h>
@@ -26,8 +26,6 @@
 
 void _mexit(int code, char *format, ...);
 inline void *memdup(void *data, unsigned int size);
-
-void sbggr8_to_bgr (const void* src, void* dst, int width, int height);
 
 #endif
 

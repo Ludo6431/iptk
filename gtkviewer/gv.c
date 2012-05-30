@@ -6,7 +6,7 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "gtkviewer.h"
+#include "gv.h"
 
 GtkWidget *_gv_window;
     GtkWidget *_gv_hbox;

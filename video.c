@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>  // ioctl
 #include "libv4lconvert.h"
 
-#include "v4l2_wrapper.h"
+#include "video.h"
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 

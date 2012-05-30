@@ -1,5 +1,5 @@
-#ifndef _PARAMETERS_H
-#define _PARAMETERS_H
+#ifndef _PARAMETER_H
+#define _PARAMETER_H
 
 // define parameters types
 typedef enum {

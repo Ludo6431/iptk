@@ -1,7 +1,7 @@
-#ifndef _ANALYSE_H
-#define _ANALYSE_H
+#ifndef _PROCESS_H
+#define _PROCESS_H
 
-#include "main.h"
+#include "context.h"
 
 void analyse_init(context_t *ctx);
 void analyse_update(context_t *ctx, unsigned char *data);

@@ -3,7 +3,7 @@
 #include <assert.h> // assert
 #include <string.h> // strdup
 
-#include "cust_params.h"
+#include "param.h"
 
 void param_init(param_t *p, char *name, char *desc, ptype_t type, volatile void *val, ...) {
     va_list ap;
