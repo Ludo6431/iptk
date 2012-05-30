@@ -22,12 +22,14 @@ typedef struct {
 
     ptype_t type;
 
-    void *val;
+    volatile void *val;
 
     union {
         struct _pt_bool pt_bool;
 
         struct _pt_int pt_int;
+
+// TODO add menu, ...
     };
 } param_t;
 

@@ -37,7 +37,11 @@ void analyse_init(context_t *ctx) {
 
 // ----------------------------------------------------------------------------
 // undistort
-    mid_und = gv_media_new("undistort", "Caméra redressée", M_PI*u_diameter, u_diameter>>1);
+    unsigned int dw, dh;
+    dw=M_PI*u_diameter;
+    dh=u_diameter>>1;
+
+    mid_und = gv_media_new("undistort", "Caméra redressée", dw, dh);
     u_gp = gv_gparam_new("undistort", "Params to define how we undistort the pic");
 
     param_init(&u_pdiameter, "diameter", "diameter of the circle", PT_INT, &u_diameter, 1 /* min */, 480 /* max */, 1 /* step */);
@@ -49,7 +53,7 @@ void analyse_init(context_t *ctx) {
 
 // ----------------------------------------------------------------------------
 // color pass
-    mid_color = gv_media_new("Caméra filtrée", "Caméra après traitement", ctx->width, ctx->height);
+    mid_color = gv_media_new("Caméra filtrée", "Caméra après traitement", dw, dh);
     c_gp = gv_gparam_new("color params", "how to filter the colors");
 
     param_init(&c_pc, "couleur", "Choisir la couleur", PT_INT, &c_c /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
@@ -64,8 +68,6 @@ void analyse_init(context_t *ctx) {
 void analyse_update(context_t *ctx, unsigned char *data) {
 // do not destroy this data argument
 
-    unsigned char *ndata;
-
 // ----------------------------------------------------------------------------
 // raw
     gv_media_update(mid_raw, data, ctx->width, ctx->height, (gv_destroy)NULL, NULL);
@@ -73,16 +75,19 @@ void analyse_update(context_t *ctx, unsigned char *data) {
 // ----------------------------------------------------------------------------
 // undistort
     unsigned int dw, dh;
+    unsigned char *u_data;
+
     dw=M_PI*u_diameter;
     dh=u_diameter>>1;
 
-    ndata = undis(data, ctx->width, ctx->height, dw, dh);
-    gv_media_update(mid_und, ndata, dw, dh, (gv_destroy)free, NULL);
+    u_data = undis(data, ctx->width, ctx->height, dw, dh);
+    gv_media_update(mid_und, u_data, dw, dh, (gv_destroy)free, NULL);
 
 // ----------------------------------------------------------------------------
 // color pass
-    ndata = color_pass(data, ctx->width, ctx->height);
-    gv_media_update(mid_color, ndata, ctx->width, ctx->height, (gv_destroy)free, NULL);
+    unsigned char *c_data;
+    c_data = color_pass(u_data, dw, dh);
+    gv_media_update(mid_color, c_data, dw, dh, (gv_destroy)free, NULL);
 }
 
 // ----------------------------------------------------------------------------

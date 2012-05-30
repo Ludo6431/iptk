@@ -119,7 +119,6 @@ void gv_param_add(int gid, param_t *p) {
     GtkWidget *button = NULL;
 
     switch(p->type) {
-    default:
     case PT_BOOL:
         // TODO
         break;
@@ -129,7 +128,11 @@ void gv_param_add(int gid, param_t *p) {
 
         g_signal_connect(G_OBJECT(button), "value-changed", G_CALLBACK(pt_int_modified), p);
         break;
+    default:
+        // erreur...
+        break;
     }
+
     gtk_container_add(GTK_CONTAINER(frame), button);
 
     gtk_widget_show(button);
