@@ -5,7 +5,7 @@
 
 #include "cust_params.h"
 
-void param_init(param_t *p, char *name, char *desc, ptype_t type, void *val, ...) {
+void param_init(param_t *p, char *name, char *desc, ptype_t type, volatile void *val, ...) {
     va_list ap;
 
     assert(p);

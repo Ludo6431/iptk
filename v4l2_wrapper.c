@@ -6,6 +6,7 @@
 #include <sys/stat.h>   // stat
 #include <errno.h>      // errno
 #include <sys/ioctl.h>  // ioctl
+#include "libv4lconvert.h"
 
 #include "v4l2_wrapper.h"
 
@@ -20,8 +21,8 @@ static int xioctl(int fd, int request, void *arg) {
     return r;
 }
 
-int video_open(char *dev_name) {
-    int fd;
+// FIXME return 0;-1 and set errno
+int video_open(struct video_t *vid, char *dev_name) {
     struct stat st; 
     struct v4l2_capability cap;
 
@@ -36,14 +37,14 @@ int video_open(char *dev_name) {
         exit(EXIT_FAILURE);
     }
 
-    fd = open(dev_name, O_RDWR /* required */ | O_NONBLOCK, 0);
-    if(fd<0) {
+    vid->fd = open(dev_name, O_RDWR /* required */ | O_NONBLOCK, 0);
+    if(vid->fd<0) {
         fprintf(stderr, "Cannot open '%s': %d, %s\n", dev_name, errno, strerror (errno));
         exit(EXIT_FAILURE);
     }
 
     // init device
-    if(xioctl(fd, VIDIOC_QUERYCAP, &cap)<0) {
+    if(xioctl(vid->fd, VIDIOC_QUERYCAP, &cap)<0) {
         if (EINVAL==errno) {
             fprintf(stderr, "%s is no V4L2 device\n", dev_name);
             exit(EXIT_FAILURE);
@@ -65,52 +66,62 @@ int video_open(char *dev_name) {
         exit(EXIT_FAILURE);
     }
 
-    return fd;
+    return 0;
 }
 
-void *video_init(int fd, struct v4l2_format *fmt, unsigned int *size) {
-    unsigned int min;
-    void *buffer;
+// FIXME return 0;-1 and set errno
+int video_config(struct video_t *vid, struct v4l2_format *fmt) {
+    // fd      : the file descriptor of the video device
+    // src_fmt : will be set to the format the closer to what we want in output
+    // fmt     : must be set with the format we want
+    int ret;
 
-    /* try to set format */
-    if(xioctl(fd, VIDIOC_S_FMT, fmt)<0) {
-        fprintf(stderr, "VIDIOC_S_FMT\n");
-        exit(EXIT_FAILURE);
-    }
+    // setup convert
+    vid->convert_data = v4lconvert_create(vid->fd);
+    if (vid->convert_data == NULL)
+        exit(1);//, "v4lconvert_create");  // FIXME errno
+    if (v4lconvert_try_format(vid->convert_data, fmt, &vid->src_fmt) != 0)
+        exit(1);//, "v4lconvert_try_format");  // FIXME errno
+    ret = xioctl(vid->fd, VIDIOC_S_FMT, &vid->src_fmt);
+    if(ret<0)
+        exit(1);    // FIXME fail
 
-    /* Buggy driver paranoia. */
-    min = fmt->fmt.pix.width * 2;
-    if(fmt->fmt.pix.bytesperline<min)
-        fmt->fmt.pix.bytesperline = min;
-    min = fmt->fmt.pix.bytesperline*fmt->fmt.pix.height;
-    if(fmt->fmt.pix.sizeimage<min)
-        fmt->fmt.pix.sizeimage = min;
+#ifdef DEBUG
+    printf("raw pixfmt: %c%c%c%c %dx%d\n",
+    vid->src_fmt.fmt.pix.pixelformat & 0xff,
+    (vid->src_fmt.fmt.pix.pixelformat >> 8) & 0xff,
+    (vid->src_fmt.fmt.pix.pixelformat >> 16) & 0xff,
+    (vid->src_fmt.fmt.pix.pixelformat >> 24) & 0xff,
+    vid->src_fmt.fmt.pix.width, vid->src_fmt.fmt.pix.height);
+#endif
 
-    /* allocate memory to store a pic */
-    if(size)
-        *size = fmt->fmt.pix.sizeimage;
-    buffer = malloc(fmt->fmt.pix.sizeimage);
-    if(!buffer) {
-        fprintf(stderr, "Out of memory\n");
-        exit(EXIT_FAILURE);
-    }
+    // allocate space for a raw image
+    vid->raw_buffer = malloc(vid->src_fmt.fmt.pix.sizeimage);
+    if(!vid->raw_buffer)
+        exit(1);    // FIXME out of memory
 
-    return buffer;
+    // keep the destination format
+    memcpy(&vid->vid_fmt, fmt, sizeof(*fmt));
+
+    return 0;
 }
 
-int video_read(int fd, void *buffer, unsigned int size) {
+// FIXME return 0;-1 and set errno
+int video_read(struct video_t *vid, void *buffer) {
     fd_set fds;
     struct timeval tv;
     int r;
 
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
 
-    /* Timeout. */
+// FIXME not necessary in case of io_watch
+/*    FD_ZERO(&fds);
+    FD_SET(vid->fd, &fds);
+
+    // Timeout.
     tv.tv_sec = 1;
     tv.tv_usec = 0;
 
-    r = select(fd + 1, &fds, NULL, NULL, &tv);
+    r = select(vid->fd + 1, &fds, NULL, NULL, &tv);
     if(r<0) {
         fprintf(stderr, "select error\n");
         exit(EXIT_FAILURE);
@@ -118,9 +129,11 @@ int video_read(int fd, void *buffer, unsigned int size) {
     if(!r) {
         fprintf(stderr, "select timeout\n");
         exit(EXIT_FAILURE);
-    }
+    }*/
+// end of FIXME
 
-    r = read(fd, buffer, size);
+    // get raw image data
+    r = read(vid->fd, vid->raw_buffer, vid->src_fmt.fmt.pix.sizeimage);
     if(r<0) {
         switch(errno) {
         case EAGAIN:
@@ -135,6 +148,16 @@ int video_read(int fd, void *buffer, unsigned int size) {
         }
     }
 
-    return r;
+    // convert data to desired format
+    if (v4lconvert_convert(vid->convert_data, &vid->src_fmt, &vid->vid_fmt,
+        vid->raw_buffer, vid->src_fmt.fmt.pix.sizeimage,    // raw data
+        buffer, vid->vid_fmt.fmt.pix.sizeimage              // converted data
+    ) < 0) {
+        if (errno != EAGAIN)
+            exit(1);    // FIXME errno_exit("v4l_convert");
+        return 1;
+    }
+
+    return 0;
 }
 

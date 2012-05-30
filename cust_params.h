@@ -31,7 +31,7 @@ typedef struct {
     };
 } param_t;
 
-void            param_init      (param_t *p, char *name, char *desc, ptype_t type, void *val, ...);
+void            param_init      (param_t *p, char *name, char *desc, ptype_t type, volatile void *val, ...);
 
 inline void *   param_get       (param_t *p);
 inline void     param_set       (param_t *p, void *val);

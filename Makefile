@@ -10,8 +10,8 @@ OBJS := $(CFILES:.c=.o)
 INCPARAMS := $(foreach dir,$(INCDIRS),-I$(CURDIR)/$(dir))
 
 CC := gcc
-CFLAGS := -Wall -g $(INCPARAMS) `pkg-config gtk+-2.0 --cflags`
-LDFLAGS := $(LIBS) `pkg-config gtk+-2.0 --libs`
+CFLAGS := -Wall -g $(INCPARAMS) `pkg-config gtk+-2.0 libv4lconvert --cflags` -DDEBUG
+LDFLAGS := $(LIBS) `pkg-config gtk+-2.0 libv4lconvert --libs`
 
 .PHONY:all clean
 

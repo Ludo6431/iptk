@@ -8,37 +8,36 @@
 #include "analyse.h"
 
 
+// ----------------------------------------------------------------------------
+// raw
+int mid_raw;
 
 // ----------------------------------------------------------------------------
 // undistort
-int mid_cam_und;
+unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dw, unsigned int dh);
+
+int mid_und;
 int u_gp;
 param_t u_pdiameter, u_pcx, u_pcy;
-
-unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh);
-unsigned int u_diameter = 480, u_cx = 640/2, u_cy = 480/2;
-unsigned int u_dw = M_PI * 480, u_dh = 480 / 2;
-
+volatile unsigned int u_diameter = 480, u_cx = 640>>1, u_cy = 480>>1;
 
 // ----------------------------------------------------------------------------
 // color pass
-int mid_cam_color;
-int c_gp;
-param_t c_pTHR0, c_pTHR1, c_pc;
-
 unsigned char *color_pass(unsigned char *data, unsigned int width, unsigned int height);
-unsigned int c_c = 240;
-unsigned int c_THR0 = 60;
-unsigned int c_THR1 = 25;
 
-
-
-
+int mid_color;
+int c_gp;
+param_t c_pc, c_pTHR0, c_pTHR1;
+volatile unsigned int c_c = 240, c_THR0 = 60, c_THR1 = 25;
 
 void analyse_init(context_t *ctx) {
 // ----------------------------------------------------------------------------
+// raw
+    mid_raw = gv_media_new("Caméra pure", "Caméra sans traitement", ctx->width, ctx->height);
+
+// ----------------------------------------------------------------------------
 // undistort
-    mid_cam_und = gv_media_new("undistort", "Caméra redressée", u_dw, u_dh);
+    mid_und = gv_media_new("undistort", "Caméra redressée", M_PI*u_diameter, u_diameter>>1);
     u_gp = gv_gparam_new("undistort", "Params to define how we undistort the pic");
 
     param_init(&u_pdiameter, "diameter", "diameter of the circle", PT_INT, &u_diameter, 1 /* min */, 480 /* max */, 1 /* step */);
@@ -48,12 +47,9 @@ void analyse_init(context_t *ctx) {
     param_init(&u_pcy, "center y", "y of the center", PT_INT, &u_cy, 0 /* min */, 479 /* max */, 1 /* step */);
     gv_param_add(u_gp, &u_pcy);
 
-
-
-
 // ----------------------------------------------------------------------------
 // color pass
-    mid_cam_color = gv_media_new("Caméra filtrée", "Caméra après traitement", ctx->width, ctx->height);
+    mid_color = gv_media_new("Caméra filtrée", "Caméra après traitement", ctx->width, ctx->height);
     c_gp = gv_gparam_new("color params", "how to filter the colors");
 
     param_init(&c_pc, "couleur", "Choisir la couleur", PT_INT, &c_c /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
@@ -66,58 +62,67 @@ void analyse_init(context_t *ctx) {
 }
 
 void analyse_update(context_t *ctx, unsigned char *data) {
+// do not destroy this data argument
+
     unsigned char *ndata;
 
 // ----------------------------------------------------------------------------
-// undistort
-    u_dw = M_PI*u_diameter;
-    u_dh = u_diameter / 2;
+// raw
+    gv_media_update(mid_raw, data, ctx->width, ctx->height, (gv_destroy)NULL, NULL);
 
-    ndata = undis(data, ctx->width, ctx->height);
-    gv_media_update(mid_cam_und, ndata, u_dw, u_dh, (gv_destroy)free, NULL);
+// ----------------------------------------------------------------------------
+// undistort
+    unsigned int dw, dh;
+    dw=M_PI*u_diameter;
+    dh=u_diameter>>1;
+
+    ndata = undis(data, ctx->width, ctx->height, dw, dh);
+    gv_media_update(mid_und, ndata, dw, dh, (gv_destroy)free, NULL);
 
 // ----------------------------------------------------------------------------
 // color pass
     ndata = color_pass(data, ctx->width, ctx->height);
-    gv_media_update(mid_cam_color, ndata, ctx->width, ctx->height, (gv_destroy)free, NULL);
+    gv_media_update(mid_color, ndata, ctx->width, ctx->height, (gv_destroy)free, NULL);
 }
-
 
 // ----------------------------------------------------------------------------
 // undistort
-unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh) {
-    unsigned char *dst = malloc(u_dw*u_dh*3);
+unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dw, unsigned int dh) {
+    unsigned char *dst = malloc(dw*dh*3);
 
 #if 0
     unsigned int i, j, sx, sy;
 
-    for(i=0; i<u_dw; i++)
-        for(j=0; j<u_dh; j++) {
-            sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)u_dw));
-            sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)u_dw));
-            memcpy(&dst[(i + j*u_dw)*3], &data[(sx + sy*sw)*3], 3);
+    for(i=0; i<dw; i++)
+        for(j=0; j<dh; j++) {
+            sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)dw));
+            sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)dw));
+            memcpy(&dst[(i + j*dw)*3], &data[(sx + sy*sw)*3], 3);
         }
 #else
-    static unsigned int *offset=NULL, _sw=0, _sh=0, _u_dw=0, _u_dh=0;
+    static unsigned int *offset=NULL, _sw=0, _sh=0, _dw=0, _dh=0, _u_cx=0, _u_cy=0;
     unsigned int i, j, sx, sy;
 
-    if(!offset || _sw!=sw || _sh!=sh || _u_dw!=u_dw || _u_dh!=u_dh) {
+    if(!offset || _sw!=sw || _sh!=sh || _dw!=dw || _dh!=dh || _u_cx!=u_cx || _u_cy!=u_cy) {
+printf("offset_update\n");
         _sw=sw;
         _sh=sh;
-        _u_dw=u_dw;
-        _u_dh=u_dh;
+        _dw=dw;
+        _dh=dh;
+        _u_cx=u_cx;
+        _u_cy=u_cy;
 
-        offset=realloc(offset, u_dw*u_dh*sizeof(*offset));
+        offset=realloc(offset, dw*dh*sizeof(*offset));
 
-        for(i=0; i<u_dw; i++)
-            for(j=0; j<u_dh; j++) {
-                sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)u_dw));
-                sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)u_dw));
-                offset[i+j*u_dw]=(sx + sy*sw)*3;
+        for(i=0; i<dw; i++)
+            for(j=0; j<dh; j++) {
+                sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)dw));
+                sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)dw));
+                offset[i+j*dw]=(sx + sy*sw)*3;
             }
     }
 
-    for(i=0; i<u_dw*u_dh; i++) {
+    for(i=0; i<dw*dh; i++) {
         dst[i*3+0]=data[offset[i]+0];
         dst[i*3+1]=data[offset[i]+1];
         dst[i*3+2]=data[offset[i]+2];

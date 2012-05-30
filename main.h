@@ -3,16 +3,15 @@
 
 #include <asm/types.h> 
 #include <linux/videodev2.h>
+#include "v4l2_wrapper.h"
 
 typedef struct {
-    int fd;
-    struct v4l2_format fmt;
+    // acquisition parameters
+    struct video_t cam;
     unsigned int width, height;
-
-    void *buffer;
-    unsigned int size;
-
-    int mid_rawcam; // raw camera image
+    unsigned int sizeimage;
+    unsigned char *buffers[2];
+    int curbuffer;
 } context_t;
 
 #endif

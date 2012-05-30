@@ -105,7 +105,7 @@ void gv_gparam_del(int gid) {
 void pt_int_modified(GtkWidget *button, param_t *p) {
     int val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(button));
 
-    *(int *)p->val = val;
+    *(volatile int *)p->val = val;
 }
 
 void gv_param_add(int gid, param_t *p) {

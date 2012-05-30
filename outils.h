@@ -1,9 +1,9 @@
 #ifndef _OUTILS_H
 #define _OUTILS_H
 
-#if DEBUG
+#ifdef DEBUG
 #include <stdarg.h>
-#define mexit(a, b...) _mexist(a, b...)
+#define mexit(a, b...) _mexit(a, b...)
 #else
 #define mexit(a, b...) exit(a)
 #endif
