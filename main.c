@@ -12,6 +12,7 @@
 
 #include "bmpsave.h"
 #include "video.h"
+#include "video_params.h"
 #include "tools.h"
 #include "process.h"
 #include "param.h"
@@ -80,6 +81,12 @@ int main(int argc, char *argv[]) {
     // init video pics handlers
     // add some video sources
     analyse_init(&ctx);
+
+    // add parameters of the camera
+    {
+        int gid = gv_gparam_new("Camera", "Paramètres de la caméra");
+        video_add_cam_params(&ctx.cam, gid);
+    }
 
     // setup periodic update
 #if 0

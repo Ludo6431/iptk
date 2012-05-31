@@ -109,7 +109,6 @@ unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh, unsi
     unsigned int i, j, sx, sy;
 
     if(!offset || _sw!=sw || _sh!=sh || _dw!=dw || _dh!=dh || _u_cx!=u_cx || _u_cy!=u_cy) {
-printf("offset_update\n");
         _sw=sw;
         _sh=sh;
         _dw=dw;
@@ -127,10 +126,17 @@ printf("offset_update\n");
             }
     }
 
+    unsigned char *p = dst, *d;
+    unsigned int *off = offset;
     for(i=0; i<dw*dh; i++) {
-        dst[i*3+0]=data[offset[i]+0];
-        dst[i*3+1]=data[offset[i]+1];
-        dst[i*3+2]=data[offset[i]+2];
+/*        dst[3*i+0] = data[offset[i]+0];
+        dst[3*i+1] = data[offset[i]+1];
+        dst[3*i+2] = data[offset[i]+2];*/
+
+        d = data + *off++;
+        *p++ = *d++;
+        *p++ = *d++;
+        *p++ = *d++;
     }
 #endif
 
@@ -164,7 +170,7 @@ unsigned char *color_pass(unsigned char *data, unsigned int width, unsigned int 
                 t = 60*(G - B)/(M - m) + 360;
             else if(M==G)
                 t = 60*(B - R)/(M - m) + 120;
-            else if(M==B)
+            else // if(M==B)
                 t = 60*(R - G)/(M - m) + 240;
             t = t%360;
 
@@ -176,7 +182,7 @@ unsigned char *color_pass(unsigned char *data, unsigned int width, unsigned int 
                 s = 0;
             else if(l<=127)
                 s = 255 * (M - m) / (M + m);
-            else if(l>127)
+            else // if(l>127)
                 s = 255 * (M - m) / (2*255 - (M + m));
 
             R = G = B = 0;

@@ -26,7 +26,11 @@ void gv_gparam_del(int gid) {
 }
 
 void gv_param_add(int gid, param_t *p) {
-    gv_param_add_widget(gid, gv_param_get_widget(p));
+    GtkWidget *w = gv_param_get_widget(p);
+
+    gv_param_add_widget(gid, w);
+
+    gtk_widget_show(w);
 }
 
 
@@ -73,7 +77,7 @@ void gv_param_add_widget(int gid, GtkWidget *w) {
 
     gtk_box_pack_start(GTK_BOX(gvbox), w, FALSE /* expand */, FALSE /* fill */, 0 /* padding */);
 
-    gtk_widget_show(w);
+//    gtk_widget_show(w);
 //    gtk_widget_show(gvbox);
 }
 
