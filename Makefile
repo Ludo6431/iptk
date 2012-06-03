@@ -1,6 +1,6 @@
 EXEC := code
-SRCDIRS := . bmpencoder gtkviewer
-INCDIRS := . bmpencoder gtkviewer
+SRCDIRS := . bmpencoder gtkviewer generic
+INCDIRS := . bmpencoder gtkviewer generic
 LIBS := -lm
 
 # --
