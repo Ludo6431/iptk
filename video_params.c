@@ -76,7 +76,7 @@ void video_add_cam_params(struct video_t *vid, int gid) {
         setval = 1;
         switch (qctrl.type) {
         case V4L2_CTRL_TYPE_INTEGER:
-        case V4L2_CTRL_TYPE_MENU:
+        case V4L2_CTRL_TYPE_MENU:   // TODO make a combo box 
             c_val = gtk_hscale_new_with_range(qctrl.minimum, qctrl.maximum, qctrl.step);
             gtk_scale_set_value_pos(GTK_SCALE(c_val), GTK_POS_LEFT);
             gtk_scale_set_draw_value(GTK_SCALE(c_val), TRUE);

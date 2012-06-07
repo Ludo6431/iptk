@@ -31,7 +31,7 @@ typedef struct {
 
         struct _pt_int pt_int;
 
-// TODO add menu, ...
+// TODO add menu, position, ...
     };
 } param_t;
 

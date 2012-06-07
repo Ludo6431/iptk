@@ -4,219 +4,277 @@
 
 #include "tools.h"
 #include "gv.h"
+#include "integ.h"
+#include "steps.h"
+#include "zones.h"
+#include "video_draw.h"
 
 #include "process.h"
 
-
 // ----------------------------------------------------------------------------
 // raw
-int mid_raw;
+int rw_mid;
 
 // ----------------------------------------------------------------------------
 // undistort
-unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dw, unsigned int dh);
-
-int mid_und;
-int u_gp;
-param_t u_pdiameter, u_pcx, u_pcy;
-volatile unsigned int u_diameter = 480, u_cx = 640>>1, u_cy = 480>>1;
+int ud_mid;
+int ud_gp;
+param_t ud_pdiameter, ud_pcx, ud_pcy;
+volatile unsigned int ud_diameter = 480, ud_cx = 640>>1, ud_cy = 480>>1;
 
 // ----------------------------------------------------------------------------
-// color pass
-unsigned char *color_pass(unsigned char *data, unsigned int width, unsigned int height);
+// horizontal sweep
+int hs_gp;
+param_t hs_pthreshold;
+volatile unsigned int hs_threshold = 5000;
 
-int mid_color;
-int c_gp;
-param_t c_pc, c_pTHR0, c_pTHR1;
-volatile unsigned int c_c = 240, c_THR0 = 60, c_THR1 = 25;
+// ----------------------------------------------------------------------------
+// vertical edge
+int ve_gp;
+param_t ve_pwidth;
+volatile unsigned int ve_width = 6;
+
+// ----------------------------------------------------------------------------
+// horizontal edge
+int he_gp;
+param_t he_pheight;
+volatile unsigned int he_height = 6;
+
+#ifdef STEP_COLOR
+// ----------------------------------------------------------------------------
+// color
+int cl_mid;
+int cl_gp;
+param_t cl_pc, cl_pTHR0, cl_pTHR1;
+volatile unsigned int cl_c = 240, cl_THR0 = 60, cl_THR1 = 25;
+#endif
 
 void analyse_init(context_t *ctx) {
 // ----------------------------------------------------------------------------
 // raw
-    mid_raw = gv_media_new("Caméra pure", "Caméra sans traitement", ctx->width, ctx->height);
+    rw_mid = gv_media_new("raw", "Caméra sans traitement", ctx->width, ctx->height);
 
 // ----------------------------------------------------------------------------
 // undistort
     unsigned int dw, dh;
-    dw=M_PI*u_diameter;
-    dh=u_diameter>>1;
+    dw=M_PI*ud_diameter;
+    dh=ud_diameter>>1;
 
-    mid_und = gv_media_new("undistort", "Caméra redressée", dw, dh);
-    u_gp = gv_gparam_new("undistort", "Params to define how we undistort the pic");
+    ud_mid = gv_media_new("undistort", "Caméra redressée", dw, dh);
+    ud_gp = gv_gparam_new("undistort", "Params to define how we undistort the pic");
 
-    param_init(&u_pdiameter, "diameter", "diameter of the circle", PT_INT, &u_diameter, 1 /* min */, 480 /* max */, 1 /* step */);
-    gv_param_add(u_gp, &u_pdiameter);
-    param_init(&u_pcx, "center x", "x of the center", PT_INT, &u_cx, 0 /* min */, 639 /* max */, 1 /* step */);
-    gv_param_add(u_gp, &u_pcx);
-    param_init(&u_pcy, "center y", "y of the center", PT_INT, &u_cy, 0 /* min */, 479 /* max */, 1 /* step */);
-    gv_param_add(u_gp, &u_pcy);
+    param_init(&ud_pdiameter, "diameter", "diameter of the circle", PT_INT, &ud_diameter, 1 /* min */, 480 /* max */, 1 /* step */);
+    gv_param_add(ud_gp, &ud_pdiameter);
+    param_init(&ud_pcx, "center x", "x of the center", PT_INT, &ud_cx, 0 /* min */, 639 /* max */, 1 /* step */);
+    gv_param_add(ud_gp, &ud_pcx);
+    param_init(&ud_pcy, "center y", "y of the center", PT_INT, &ud_cy, 0 /* min */, 479 /* max */, 1 /* step */);
+    gv_param_add(ud_gp, &ud_pcy);
 
 // ----------------------------------------------------------------------------
-// color pass
-    mid_color = gv_media_new("Caméra filtrée", "Caméra après traitement", dw, dh);
-    c_gp = gv_gparam_new("color params", "how to filter the colors");
+// horizontal sweep
+    hs_gp = gv_gparam_new("hsweep", "Params to define how we run the horizontal sweep");
 
-    param_init(&c_pc, "couleur", "Choisir la couleur", PT_INT, &c_c /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
-    gv_param_add(c_gp, &c_pc);
+    param_init(&hs_pthreshold, "threshold", "smaller value", PT_INT, &hs_threshold, 0 /* min */, 50000 /* max */, 1 /* step */);
+    gv_param_add(hs_gp, &hs_pthreshold);
 
-    param_init(&c_pTHR0, "THR0", "Value threshold", PT_INT, &c_THR0 /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
-    gv_param_add(c_gp, &c_pTHR0);
-    param_init(&c_pTHR1, "THR1", "Color threshold", PT_INT, &c_THR1 /* cf analyse.h */, 0 /* min */, 360/6 /* max */, 1 /* step */);
-    gv_param_add(c_gp, &c_pTHR1);
+// ----------------------------------------------------------------------------
+// vertical edge
+    ve_gp = gv_gparam_new("vedge", "Params to define how we run the vertical edge detector");
+
+    param_init(&ve_pwidth, "pattern width", "width of the pattern", PT_INT, &ve_width, 2 /* min */, 32 /* max */, 2 /* step */);
+    gv_param_add(ve_gp, &ve_pwidth);
+
+// ----------------------------------------------------------------------------
+// horizontal edge
+    he_gp = gv_gparam_new("hedge", "Params to define how we run the horizontal edge detector");
+
+    param_init(&he_pheight, "pattern height", "height of the pattern", PT_INT, &he_height, 2 /* min */, 32 /* max */, 2 /* step */);
+    gv_param_add(he_gp, &he_pheight);
+
+#ifdef STEP_COLOR
+// ----------------------------------------------------------------------------
+// color
+    cl_mid = gv_media_new("color", "Caméra après traitement sur les couleurs", dw, dh);
+    cl_gp = gv_gparam_new("color params", "how to filter the colors");
+
+    param_init(&cl_pc, "couleur", "Choisir la couleur", PT_INT, &cl_c /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
+    gv_param_add(cl_gp, &cl_pc);
+
+    param_init(&cl_pTHR0, "THR0", "Value threshold", PT_INT, &cl_THR0 /* cf analyse.h */, 0 /* min */, 255 /* max */, 1 /* step */);
+    gv_param_add(cl_gp, &cl_pTHR0);
+    param_init(&cl_pTHR1, "THR1", "Color threshold", PT_INT, &cl_THR1 /* cf analyse.h */, 0 /* min */, 360/6 /* max */, 1 /* step */);
+    gv_param_add(cl_gp, &cl_pTHR1);
+#endif
 }
 
-void analyse_update(context_t *ctx, unsigned char *data) {
-// do not destroy this data argument
+#ifdef DEBUG_DUMP_ZONES
+void dump_rgb_b(unsigned char *tab, int iw, int ih, int y, int x, int w, int h) {
+    int i, j;
+
+    for (i=y; i<MIN(y+h, ih); i++) {
+        for (j=x; j<MIN(x+w, iw); j++)
+            printf("%d,",
+//                tab[(i*iw + j)*3 + 0],    // R
+//                tab[(i*iw + j)*3 + 1],    // G
+                tab[(i*iw + j)*3 + 2]     // B
+            );
+
+        printf("\n");
+    }
+}
+#endif
+
+void analyse_update(context_t *ctx, unsigned char *rw_data) {
+// do not destroy this <rw_data> argument
+
+// ----------------------------------------------------------------------------
+// undistort
+    unsigned int ud_w, ud_h;
+    unsigned char *ud_data;
+
+    ud_w = M_PI*ud_diameter;
+    ud_h = ud_diameter>>1;
+
+    ud_data = step_undis(rw_data, ctx->width, ctx->height, ud_diameter, ud_cx, ud_cy);
+
+// ----------------------------------------------------------------------------
+// integ
+    unsigned int *intg = (unsigned int *)malloc(ud_w*ud_h*sizeof(unsigned int));
+
+    integ_rgb(intg, ud_data, ud_w, ud_h, ud_w*3, 2);   // integral of blue component
+
+// ----------------------------------------------------------------------------
+// horizontal sweep
+    sZone *hs_zl;
+    hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 175, 60, hs_threshold);
+
+#ifdef DEBUG_HSWEEP
+    printf("hsweep zones:\n");
+    zone_print_all(hs_zl);
+#endif
+
+    {
+        sZone * l = hs_zl;
+        for(; l; l = l->next) {
+#if 0
+            // multiply by 1.5 the size of the zone
+            l->x -= l->w>>2;
+            l->w += l->w>>1;
+#else
+            // double the size of the zone
+            l->x -= l->w>>1;
+            l->w += l->w;
+#endif
+        }
+
+        hs_zl = zone_hshrink(hs_zl, 1 /* sort */);
+    }
+
+    printf("hsweep zones (enlarge + hshrink):\n");
+//    zone_print_all(hs_zl);
+
+    {
+#ifdef DEBUG_DUMP_ZONES
+        printf("hsweep zones data:\n");
+#endif
+        sZone * l = hs_zl;
+        for(; l; l = l->next) {
+            printf("  "); zone_print(l); printf("\n");
+#ifdef DEBUG_DUMP_ZONES
+            dump_rgb_b(ud_data, dw, dh, l->y, l->x, l->w, l->h);
+#endif
+
+            zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 255, 0, 0);   // red boxes
+        }
+    }
+
+// ----------------------------------------------------------------------------
+// vertical edge
+    sZone *ve_zl;
+    ve_zl = step_vedge(intg, ud_w, ud_h, hs_zl, ve_width);
+
+    printf("vedge zones:\n");
+    zone_print_all(ve_zl);
+
+    {
+        sZone * l = ve_zl;
+        for(; l; l = l->next)
+            zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 0, 255, 0);   // green boxes
+    }
+
+// ----------------------------------------------------------------------------
+// horizontal edge
+    sZone *he_zl;
+    he_zl = step_hedge(intg, ud_w, ud_h, ve_zl, he_height);
+
+    printf("hedge zones:\n");
+    zone_print_all(he_zl);
+
+    {
+        sZone * l = he_zl;
+        for(; l; l = l->next)
+            zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 255, 255, 0); // yellow boxes
+    }
+
+// ----------------------------------------------------------------------------
+// detection
+    printf("detect zones:\n");
+    {
+        sZone * l = he_zl;
+        for(; l; l = l->next) {
+            int d1, d2, d3;
+            int v1, v2, v3;
+
+            // print zone
+            zone_print(l); printf("\n");
+
+            // print zone h/w ratio
+            printf("  %.2f\n", (float)l->h/(float)l->w);
+
+            v1 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, 7*l->h/15);
+            v2 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, l->h>>1);
+            v3 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, 8*l->h/15);
+
+            // print results with each test pattern
+            printf("  %02d,%02d,%02d\n", v1, v2, v3);
+
+            if(v2 > l->v/20) {
+                // up
+                printf("up\n");
+            }
+            else if(v2 < -l->v/20) {
+                // down
+                printf("down\n");
+            }
+            else {
+                // center
+                printf("center\n");
+            }
+        }
+    }
+
+// free temporary data
+    zone_del_all(hs_zl);
+    zone_del_all(ve_zl);
+    zone_del_all(he_zl);
+    free(intg);
+
+// undistort update (with the zones displayed)
+    gv_media_update(ud_mid, ud_data, ud_w, ud_h, (gv_destroy)free, NULL);
+
+#ifdef STEP_COLOR
+// ----------------------------------------------------------------------------
+// color
+    unsigned char *cl_data;
+    cl_data = step_color(ud_data, ud_w, ud_h);
+    gv_media_update(cl_mid, cl_data, ud_w, ud_h, (gv_destroy)free, NULL);
+#endif
 
 // ----------------------------------------------------------------------------
 // raw
-    gv_media_update(mid_raw, data, ctx->width, ctx->height, (gv_destroy)NULL, NULL);
+    video_draw_cross(rw_data, ctx->width*3, ctx->height, ud_cx, ud_cy, ud_diameter>>3, 255, 0, 0);
+    video_draw_circle(rw_data, ctx->width*3, ctx->height, ud_cx, ud_cy, ud_diameter>>1, 255, 0, 0);
 
-// ----------------------------------------------------------------------------
-// undistort
-    unsigned int dw, dh;
-    unsigned char *u_data;
-
-    dw=M_PI*u_diameter;
-    dh=u_diameter>>1;
-
-    u_data = undis(data, ctx->width, ctx->height, dw, dh);
-    gv_media_update(mid_und, u_data, dw, dh, (gv_destroy)free, NULL);
-
-// ----------------------------------------------------------------------------
-// color pass
-    unsigned char *c_data;
-    c_data = color_pass(u_data, dw, dh);
-    gv_media_update(mid_color, c_data, dw, dh, (gv_destroy)free, NULL);
-}
-
-// ----------------------------------------------------------------------------
-// undistort
-unsigned char *undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dw, unsigned int dh) {
-    unsigned char *dst = malloc(dw*dh*3);
-
-#if 0
-    unsigned int i, j, sx, sy;
-
-    for(i=0; i<dw; i++)
-        for(j=0; j<dh; j++) {
-            sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)dw));
-            sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)dw));
-            memcpy(&dst[(i + j*dw)*3], &data[(sx + sy*sw)*3], 3);
-        }
-#else
-    static unsigned int *offset=NULL, _sw=0, _sh=0, _dw=0, _dh=0, _u_cx=0, _u_cy=0;
-    unsigned int i, j, sx, sy;
-
-    if(!offset || _sw!=sw || _sh!=sh || _dw!=dw || _dh!=dh || _u_cx!=u_cx || _u_cy!=u_cy) {
-        _sw=sw;
-        _sh=sh;
-        _dw=dw;
-        _dh=dh;
-        _u_cx=u_cx;
-        _u_cy=u_cy;
-
-        offset=realloc(offset, dw*dh*sizeof(*offset));
-
-        for(i=0; i<dw; i++)
-            for(j=0; j<dh; j++) {
-                sx = (int)(u_cx + (double)j*cos(2 * M_PI * (double)i / (double)dw));
-                sy = (int)(u_cy + (double)j*sin(2 * M_PI * (double)i / (double)dw));
-                offset[i+j*dw]=(sx + sy*sw)*3;
-            }
-    }
-
-    unsigned char *p = dst, *d;
-    unsigned int *off = offset;
-    for(i=0; i<dw*dh; i++) {
-/*        dst[3*i+0] = data[offset[i]+0];
-        dst[3*i+1] = data[offset[i]+1];
-        dst[3*i+2] = data[offset[i]+2];*/
-
-        d = data + *off++;
-        *p++ = *d++;
-        *p++ = *d++;
-        *p++ = *d++;
-    }
-#endif
-
-    return dst;
-}
-
-
-// ----------------------------------------------------------------------------
-// color pass
-unsigned char *color_pass(unsigned char *data, unsigned int width, unsigned int height) {
-    data = memdup(data, width*height*3);
-
-    unsigned char m, M, l, s, R, G, B;
-    unsigned int t;
-
-//printf("THR0=%d\nTHR1=%d\n", THR0, THR1);
-    int i, j;
-    for(j=0; j<height; j++)
-        for(i=0; i<3*width; i+=3) {
-            R = data[i+0 + j*width*3];
-            G = data[i+1 + j*width*3];
-            B = data[i+2 + j*width*3];
-
-            m = MIN3(R, G, B);
-            M = MAX3(R, G, B);
-
-            // get T
-            if(M==m)
-                t = 0;
-            else if(M==R)
-                t = 60*(G - B)/(M - m) + 360;
-            else if(M==G)
-                t = 60*(B - R)/(M - m) + 120;
-            else // if(M==B)
-                t = 60*(R - G)/(M - m) + 240;
-            t = t%360;
-
-            // get L
-            l = (M + m)>>1;
-
-            // get S
-            if(M==m)
-                s = 0;
-            else if(l<=127)
-                s = 255 * (M - m) / (M + m);
-            else // if(l>127)
-                s = 255 * (M - m) / (2*255 - (M + m));
-
-            R = G = B = 0;
-
-            // do test
-            if(abs(M - m)>=c_THR0 && M>=0+c_THR0 && m<=255-c_THR0) {    // far enough from grey, white and black
-                if(0);
-                else if(c_c-c_THR1<t && t<c_c+c_THR1) { // green
-                    R = 0;
-                    G = 255;
-                    B = 0;
-                }
-/*                else if(360-c_THR1<t || t<0+c_THR1) { // red
-                    R = 255;
-                    G = 0;
-                    B = 0;
-                }
-                else if(120-c_THR1<t && t<120+c_THR1) { // green
-                    R = 0;
-                    G = 255;
-                    B = 0;
-                }
-                else if(240-c_THR1<t && t<240+c_THR1) { // blue
-                    R = 0;
-                    G = 0;
-                    B = 255;
-                }*/
-            }
-
-            data[i+0 + j*width*3] = R;
-            data[i+1 + j*width*3] = G;
-            data[i+2 + j*width*3] = B;
-        }
-
-    return data;
+    gv_media_update(rw_mid, rw_data, ctx->width, ctx->height, (gv_destroy)NULL, NULL);
 }
 

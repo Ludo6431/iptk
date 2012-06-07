@@ -11,6 +11,30 @@ GtkWidget *_gv_window;
         GtkWidget *_gv_nbmedia; // notebook
         GtkWidget *_gv_nbparams;    // notebook
 
+//void quit(
+
+int process = 0;
+
+void key_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
+    unsigned int k;
+
+    k = event->key.keyval;
+//printf("%08x %s\n", k, event->key.string);
+    if (k < 0xff) {
+        switch (k) {
+        case 'g':		/* grab a raw image */
+//            grab = 1;
+            process = 1;
+            media_RawDump();
+            break;
+        case 'p':		/* process a raw image */
+            process = 1;
+        default:
+            break;
+        }
+    }
+}
+
 void gv_init(int *pargc, char **pargv[], char *wtitle, char *help) {
     // init GUI
     gtk_init(pargc, pargv);
@@ -19,6 +43,7 @@ void gv_init(int *pargc, char **pargv[], char *wtitle, char *help) {
     _gv_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(_gv_window), wtitle);
     g_signal_connect(_gv_window, "delete-event", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(_gv_window, "key-release-event", G_CALLBACK(key_event), NULL);
 
         // the main horizontal box
         _gv_hbox = gtk_hbox_new(FALSE, 0);

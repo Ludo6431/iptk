@@ -24,6 +24,10 @@
 #   define MIN3(a, b, c) MIN(a, MIN(b, c))
 #endif
 
+#ifndef CLAMP
+#   define CLAMP(m, v, M) MAX(m, MIN(v, M))
+#endif
+
 void _mexit(int code, char *format, ...);
 inline void *memdup(void *data, unsigned int size);
 
