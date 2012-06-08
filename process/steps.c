@@ -11,9 +11,20 @@
 
 unsigned char *step_undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dd, unsigned int dcx, unsigned int dcy) {
     unsigned int dw = dd*M_PI;
-    unsigned int dh = dd>>1;
+    unsigned int dh;
+
+#ifdef OLD_UNDIS
+    dh = dd>>1;
+#else
+    float rho2y(float rho);
+    float y2rho(float y);
+
+    dh = (int)(rho2y(240)-rho2y(240-65));
+#endif
 
     unsigned char *dst = malloc(dw*dh*3);
+    if(!dst)
+        exit(1);
 
 #if 0
     unsigned int i, j, sx, sy;
@@ -27,6 +38,7 @@ unsigned char *step_undis(unsigned char *data, unsigned int sw, unsigned int sh,
 #else
     static unsigned int *offset=NULL, _sw=0, _sh=0, _dd=0, _dcx=0, _dcy=0;
     unsigned int i, j, sx, sy;
+    double rho;
 
     if(!offset || _sw!=sw || _sh!=sh || _dd!=dd || _dcx!=dcx || _dcy!=dcy) {
         _sw=sw;
@@ -37,12 +49,20 @@ unsigned char *step_undis(unsigned char *data, unsigned int sw, unsigned int sh,
 
         offset=realloc(offset, dw*dh*sizeof(*offset));
 
-//ρ=d0*tan(sin(0.5161*arctan(y/d0)+0,8294)-0,001856)
-
         for(i=0; i<dw; i++)
             for(j=0; j<dh; j++) {
-                sx = CLAMP(0, (int)(dcx + (double)j*cos(2 * M_PI * (double)i / (double)dw)), sw-1);
-                sy = CLAMP(0, (int)(dcy + (double)j*sin(2 * M_PI * (double)i / (double)dw)), sh-1);
+#ifdef OLD_UNDIS
+                rho = (double)j;
+#else
+                rho = y2rho(rho2y(240)-(dh-1-j));
+
+//                printf("  %d,%d\n", j, rho);
+#endif
+
+                sx = CLAMP(0, (int)(dcx + rho*cos(2 * M_PI * (double)i / (double)dw)), sw-1);
+                sy = CLAMP(0, (int)(dcy + rho*sin(2 * M_PI * (double)i / (double)dw)), sh-1);
+
+//                printf("    %d,%d\n", sx, sy);
 
                 offset[i+j*dw]=(sx + sy*sw)*3;
             }

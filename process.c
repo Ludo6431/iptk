@@ -124,6 +124,19 @@ void dump_rgb_b(unsigned char *tab, int iw, int ih, int y, int x, int w, int h) 
 }
 #endif
 
+#ifndef OLD_UNDIS
+#define D0 (13.5*360/(2*M_PI))
+#define D1 (3.9*360/(2*M_PI))
+
+float rho2y(float rho) {
+    return D1*tan((asin(atan(rho/D0) + 0.001856) - 0.8294)/0.5161);
+}
+
+float y2rho(float y) {
+    return D0*tan(sin(0.5161*atan(y/D1)+0.8294)-0.001856);
+}
+#endif
+
 void analyse_update(context_t *ctx, unsigned char *rw_data) {
 // do not destroy this <rw_data> argument
 
@@ -133,7 +146,18 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     unsigned char *ud_data;
 
     ud_w = M_PI*ud_diameter;
+#ifdef OLD_UNDIS
     ud_h = ud_diameter>>1;
+#else
+
+    float v = rho2y(240)-rho2y(240-65);
+
+    printf("ud_h = %f\n", v);
+
+    ud_h = (int)v;
+
+    printf("ud_h = %d\n", ud_h);
+#endif
 
     ud_data = step_undis(rw_data, ctx->width, ctx->height, ud_diameter, ud_cx, ud_cy);
 
@@ -146,7 +170,11 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
 // ----------------------------------------------------------------------------
 // horizontal sweep
     sZone *hs_zl;
+#ifdef OLD_UNDIS
     hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 175, 60, hs_threshold);
+#else
+    hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 20, 100, hs_threshold);
+#endif
 
 #ifdef DEBUG_HSWEEP
     printf("hsweep zones:\n");
