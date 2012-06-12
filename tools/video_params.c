@@ -51,8 +51,18 @@ static void reset_ctrl(GtkButton *b, struct ctrl_data *ctrl_d)
 	if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
 		fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
 
-	gtk_range_set_value(GTK_RANGE(ctrl_d->w), ctrl.value);
-//	gtk_adjustment_value_changed(GTK_ADJUSTMENT(val));
+    switch (qctrl.type) {
+    case V4L2_CTRL_TYPE_INTEGER:
+    case V4L2_CTRL_TYPE_MENU:
+        gtk_range_set_value(GTK_RANGE(ctrl_d->w), ctrl.value);
+//        gtk_adjustment_value_changed(GTK_ADJUSTMENT(val));
+        break;
+    case V4L2_CTRL_TYPE_BOOLEAN:
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl_d->w), ctrl.value);
+        break;
+    default:
+        break;
+    }        
 }
 
 void video_add_cam_params(struct video_t *vid, int gid) {

@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include "tools.h"
+
 #include "video_draw.h"
 
 void video_draw_pixel(unsigned char *rgb, unsigned int rowstride, unsigned int h, unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b) {
@@ -55,5 +57,25 @@ void video_draw_circle(unsigned char *rgb, unsigned int rowstride, unsigned int 
         video_draw_pixel(rgb, rowstride, h, xc+y, yc+x, r, g, b);//lower lower right
         video_draw_pixel(rgb, rowstride, h, xc+x, yc+y, r, g, b);//lower right right
      } 
+}
+
+void video_draw_box_ovr(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, int bx, int by, int bw, int bh, unsigned char r, unsigned char g, unsigned char b) {
+    if((bx < w && bx + bw > w) || (bx < 0 && bx + bw > 0)) {
+        // right
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, w-1, by, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by+bh-1, w-1, by+bh-1, r, g, b);
+
+        // left
+        video_draw_line(rgb, rowstride, h, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, 0, by, MOD(bx+bw-1, (int)w), by, r, g, b);
+        video_draw_line(rgb, rowstride, h, 0, by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+    }
+    else {
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx+bw-1, (int)w), by, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+    }
 }
 

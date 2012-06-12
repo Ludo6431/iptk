@@ -211,23 +211,8 @@ int zone_pat_hedge_tune(unsigned int *intg, unsigned int iw, unsigned int ih, sZ
 #include "video_draw.h"
 
 void zone_video_draw(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, sZone *z, unsigned char r, unsigned char g, unsigned char b) {
-    if((z->x < w && z->x + z->w > w) || (z->x < 0 && z->x + z->w > 0)) {
-        // right
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x-1, (int)w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, w-1, z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y+z->h, w-1, z->y+z->h, r, g, b);
-
-        // left
-        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, z->y-1, MOD(z->x+z->w, (int)w), z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, z->y+z->h, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
-    }
-    else {
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x-1, (int)w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y+z->h, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
-    }
+    // draw the box 1 pixel outside of the actual zone
+    video_draw_box_ovr(rgb, w, h, rowstride, z->x-1, z->y-1, z->w+2, z->h+2, r, g, b);
 }
 
 // ---- DEBUG ----
@@ -236,8 +221,8 @@ void zone_print(sZone *z) {
     printf("(%d,%d;%dx%d;%d)", z->x, z->y, z->w, z->h, z->v);
 }
 
-void zone_print_all(sZone *l) {
+void zone_print_all(sZone *l, char *prefix) {
     for(; l; l = l->next)
-        printf("%03d,%03d (%03dx%03d) %d\n", l->x, l->y, l->w, l->h, l->v);
+        printf("%s%03d,%03d (%03dx%03d) %d\n", prefix, l->x, l->y, l->w, l->h, l->v);
 }
 

@@ -1,0 +1,44 @@
+Code du projet de synthèse de deuxième année d'étude
+à l'Ecole Nationale de l'Aviation Civile.
+
+par Quentin Vey et Ludovic Lacoste, IENAC10L
+
+
+Il s'agit de l'implémentation d'un algorithme de traitement
+d'images appliqué à la reconnaissance d'amers visuels.
+Ce code est fait en C et a été développé sous linux.
+
+
+Aménagement du code :
+    * main.c
+        Point d'entrée du code, initialisations, acquisition vidéo
+
+    * tools/
+        Code générique pour la gestion de la vidéo et des paramètres
+        Outils
+
+    * gtkviewer/
+        Gestion de l'interface graphique
+
+    * process/
+        Fonctions de traitements et de calculs de l'algorithme
+
+    * process_video.{c,h}
+        Fonction principale d'appels aux traitements et calculs vidéo
+
+    * Makefile
+        Fichier de paramétrage de la compilation
+
+Dépendances :
+    video4linux2
+    gtk
+
+Compilation :
+    Une fois les versions de développement des dépendances ci-dessus instalées,
+    il suffit de taper :
+        make
+
+Exécution :
+    Le programme peut prendre en premier paramètre le chemin d'accès
+    au périphérique vidéo, tel que /dev/video0
+

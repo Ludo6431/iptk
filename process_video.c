@@ -9,7 +9,7 @@
 #include "zones.h"
 #include "video_draw.h"
 
-#include "process.h"
+#include "process_video.h"
 
 // ----------------------------------------------------------------------------
 // raw
@@ -178,7 +178,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
 
 #ifdef DEBUG_HSWEEP
     printf("hsweep zones:\n");
-    zone_print_all(hs_zl);
+    zone_print_all(hs_zl, "  ");
 #endif
 
     {
@@ -199,7 +199,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     }
 
     printf("hsweep zones (enlarge + hshrink):\n");
-//    zone_print_all(hs_zl);
+//    zone_print_all(hs_zl, "  ");
 
     {
 #ifdef DEBUG_DUMP_ZONES
@@ -222,7 +222,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     ve_zl = step_vedge(intg, ud_w, ud_h, hs_zl, ve_width);
 
     printf("vedge zones:\n");
-    zone_print_all(ve_zl);
+    zone_print_all(ve_zl, "  ");
 
     {
         sZone * l = ve_zl;
@@ -236,7 +236,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     he_zl = step_hedge(intg, ud_w, ud_h, ve_zl, he_height);
 
     printf("hedge zones:\n");
-    zone_print_all(he_zl);
+    zone_print_all(he_zl, "  ");
 
     {
         sZone * l = he_zl;

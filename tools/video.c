@@ -108,13 +108,13 @@ int video_config(struct video_t *vid, struct v4l2_format *fmt) {
 
 // FIXME return 0;-1 and set errno
 int video_read(struct video_t *vid, void *buffer) {
-    fd_set fds;
-    struct timeval tv;
     int r;
 
 
 // FIXME not necessary in case of io_watch
-/*    FD_ZERO(&fds);
+/*    fd_set fds;
+    struct timeval tv;
+    FD_ZERO(&fds);
     FD_SET(vid->fd, &fds);
 
     // Timeout.

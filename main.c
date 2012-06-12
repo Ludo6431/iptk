@@ -10,11 +10,10 @@
 #include <sys/ioctl.h>
 #include <glib.h>
 
-#include "bmpsave.h"
 #include "video.h"
 #include "video_params.h"
 #include "tools.h"
-#include "process.h"
+#include "process_video.h"
 #include "param.h"
 #include "gv.h"
 #include "context.h"
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]) {
     // setup periodic update
 #if 0
 // in this case (user-fixed framerate), you would enable the select in video_read
-    g_timeout_add(1000/5, (GSourceFunc)update, &ctx);
+    g_timeout_add(1000/1, (GSourceFunc)update, &ctx);
 #else
 // in this case (maximum framerate), you must remove the select in video_read
     int handle(GIOChannel *source, GIOCondition condition, context_t *ctx) {

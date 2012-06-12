@@ -1,6 +1,6 @@
-EXEC := code
-SRCDIRS := . bmpencoder gtkviewer generic process
-INCDIRS := . bmpencoder gtkviewer generic process
+EXEC := exec
+SRCDIRS := . gtkviewer tools process
+INCDIRS := . gtkviewer tools process
 LIBS := -lm
 
 # --
@@ -22,8 +22,10 @@ clean:
 	rm $(EXEC) $(OBJS)
 
 %.o:%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo -e "\x1b[32m"$@"\x1b[0m"
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(EXEC):$(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	@echo -e "\x1b[32m"$@"\x1b[0m"
+	@$(CC) $(LDFLAGS) -o $@ $(OBJS)
 

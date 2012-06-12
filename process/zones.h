@@ -33,7 +33,7 @@ void zone_video_draw(unsigned char *rgb, unsigned int w, unsigned int h, unsigne
 // ---- DEBUG ----
 
 void zone_print(sZone *z);
-void zone_print_all(sZone *l);
+void zone_print_all(sZone *l, char *prefix);
 
 #endif
 
