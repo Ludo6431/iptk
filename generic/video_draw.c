@@ -11,7 +11,7 @@ void video_draw_pixel(unsigned char *rgb, unsigned int rowstride, unsigned int h
 }
 
 void video_draw_line(unsigned char *rgb, unsigned int rowstride, unsigned int h, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned char r, unsigned char g, unsigned char b) {
-printf("(%d,%d;%d,%d)\n", x0, y0, x1, y1);
+    // Bresenham algorithm
 
     int dx = abs((int)x1-(int)x0), sx = x0<x1 ? 1 : -1;
     int dy = abs((int)y1-(int)y0), sy = y0<y1 ? 1 : -1; 

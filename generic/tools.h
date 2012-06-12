@@ -28,6 +28,10 @@
 #   define CLAMP(m, v, M) MAX(m, MIN(v, M))
 #endif
 
+#ifndef MOD
+#   define MOD(a, n) ((((a)%(n))+(n))%(n))
+#endif
+
 void _mexit(int code, char *format, ...);
 inline void *memdup(void *data, unsigned int size);
 

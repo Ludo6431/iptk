@@ -88,7 +88,7 @@ void analyse_init(context_t *ctx) {
 // horizontal edge
     he_gp = gv_gparam_new("hedge", "Params to define how we run the horizontal edge detector");
 
-    param_init(&he_pheight, "pattern height", "height of the pattern", PT_INT, &he_height, 2 /* min */, 32 /* max */, 2 /* step */);
+    param_init(&he_pheight, "pattern height", "height of the pattern", PT_INT, &he_height, 2 /* min */, 64 /* max */, 2 /* step */);
     gv_param_add(he_gp, &he_pheight);
 
 #ifdef STEP_COLOR
@@ -173,7 +173,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
 #ifdef OLD_UNDIS
     hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 175, 60, hs_threshold);
 #else
-    hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 20, 100, hs_threshold);
+    hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 20, 145, hs_threshold);
 #endif
 
 #ifdef DEBUG_HSWEEP
@@ -250,8 +250,7 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     {
         sZone * l = he_zl;
         for(; l; l = l->next) {
-            int d1, d2, d3;
-            int v1, v2, v3;
+            int v;
 
             // print zone
             zone_print(l); printf("\n");
@@ -259,18 +258,13 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
             // print zone h/w ratio
             printf("  %.2f\n", (float)l->h/(float)l->w);
 
-            v1 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, 7*l->h/15);
-            v2 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, l->h>>1);
-            v3 = zone_pat_hedge_tune(intg, ud_w, ud_h, l, 8*l->h/15);
+            v = zone_pat_hedge(intg, ud_w, ud_h, l);
 
-            // print results with each test pattern
-            printf("  %02d,%02d,%02d\n", v1, v2, v3);
-
-            if(v2 > l->v/20) {
+            if(v > l->v/20) {
                 // up
                 printf("up\n");
             }
-            else if(v2 < -l->v/20) {
+            else if(v < -l->v/20) {
                 // down
                 printf("down\n");
             }

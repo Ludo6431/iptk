@@ -253,11 +253,11 @@ sZone *step_vedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
         neighbors_i = 0;
         neighbors_j = 0;
 
-        for(j = z->x; j + w < z->x + z->w; j++) {
+        for(j = z->x - (w>>1); j + (w>>1) < z->x + z->w; j++) {
             v = pat_vedge(intg, iw, ih, z->y, j, w, z->h);
 
-            if(j == z->x) { // first node
-                j_current = z->x;
+            if(j == z->x - (w>>1)) { // first node
+                j_current = j;
                 v_current = v;
             }
 
@@ -270,7 +270,7 @@ sZone *step_vedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
             v_neighbors[neighbors_i%NEIGHBORS_NB] = v;
             neighbors_i++;
 
-            if((neighbors_i>=NEIGHBORS_NB && neighbors_i>neighbors_j+(NEIGHBORS_NB/2)) || j + w == z->x + z->w -1 /* last loop run */) { // enough data, run a step of the algorithm
+            if((neighbors_i>=NEIGHBORS_NB && neighbors_i>neighbors_j+(NEIGHBORS_NB/2)) || j + (w>>1) == z->x + z->w -1 /* last loop run */) { // enough data, run a step of the algorithm
                 // is there any interesting neighbor ? ...
                 for(x = 0; x<NEIGHBORS_NB; x++) {
                     if(!x || etat*v_neighbors[x] > etat*v_next) {
@@ -352,12 +352,17 @@ sZone *step_hedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
         etat = -1;  // we start by searching a minimum
         neighbors_i = 0;
         neighbors_j = 0;
+        h = CLAMP(2, z->w<<2, 64);
 
-        for(i = z->y; i + h < z->y + z->h; i++) {
+#ifdef DEBUG_HEDGE
+    printf("h=%d\n", h);
+#endif
+
+        for(i = z->y - (h>>1); i + (h>>1) < z->y + z->h; i++) {
             v = pat_hedge(intg, iw, ih, i, z->x, z->w, h);
 
-            if(i == z->y) { // first node
-                i_current = z->y;
+            if(i == z->y - (h>>1)) { // first node
+                i_current = i;
                 v_current = v;
             }
 
@@ -370,7 +375,7 @@ sZone *step_hedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
             v_neighbors[neighbors_i%NEIGHBORS_NB] = v;
             neighbors_i++;
 
-            if((neighbors_i>=NEIGHBORS_NB && neighbors_i>neighbors_j+(NEIGHBORS_NB/2)) || i + h == z->y + z->h -1 /* last loop run */) { // enough data, run a step of the algorithm
+            if((neighbors_i>=NEIGHBORS_NB && neighbors_i>neighbors_j+(NEIGHBORS_NB/2)) || i + (h>>1) == z->y + z->h -1 /* last loop run */) { // enough data, run a step of the algorithm
                 // is there any interesting neighbor ? ...
                 for(x = 0; x<NEIGHBORS_NB; x++) {
                     if(!x || etat*v_neighbors[x] > etat*v_next) {
@@ -383,7 +388,14 @@ sZone *step_hedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
                 printf("%s, next %d@%d\n", etat==-1?"min":"max", v_next, i_next);
 #endif
 
-                if(etat*v_next <= etat*v_current && abs(v_next) >= z->v/20) {  // ... yes, found local extremum
+                if(
+                    etat*v_next <= etat*v_current   // the new/next extremum is not better than the current one ...
+                    && abs(v_current) >= z->v/20    // ... and it is far from 0
+                    && (
+                        (etat == 1 && abs(v_current+min) < -min/4)     // the maximum must be of the same order of the previous minimum
+                        || (etat == -1 && v_current < 0)        // the minimum must be negative
+                    )
+                ) {  // ... yes, found local extremum
                     if(etat == -1) {
                         imin = i_current;
                         min = v_current;

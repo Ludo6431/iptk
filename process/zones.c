@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "tools.h"
+
 #include "zones.h"
 
 #ifndef MAX
@@ -208,25 +210,23 @@ int zone_pat_hedge_tune(unsigned int *intg, unsigned int iw, unsigned int ih, sZ
 // ---- VIDEO ----
 #include "video_draw.h"
 
-#define MOD(a, n) ((((a)%(int)(n))+(int)(n))%(int)(n))
-
 void zone_video_draw(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, sZone *z, unsigned char r, unsigned char g, unsigned char b) {
     if((z->x < w && z->x + z->w > w) || (z->x < 0 && z->x + z->w > 0)) {
         // right
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y-1, MOD(z->x-1, w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y-1, w-1, z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y+z->h, w-1, z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x-1, (int)w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, w-1, z->y-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y+z->h, w-1, z->y+z->h, r, g, b);
 
         // left
-        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, w), z->y-1, MOD(z->x+z->w, w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, z->y-1, MOD(z->x+z->w, w), z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, z->y+z->h, MOD(z->x+z->w, z->w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, 0, z->y-1, MOD(z->x+z->w, (int)w), z->y-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, 0, z->y+z->h, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
     }
     else {
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y-1, MOD(z->x-1, w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y-1, MOD(z->x+z->w, w), z->y-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x-1, w), z->y+z->h, MOD(z->x+z->w, w), z->y+z->h, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, w), z->y-1, MOD(z->x+z->w, w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x-1, (int)w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y-1, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x-1, (int)w), z->y+z->h, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
+        video_draw_line(rgb, rowstride, h, MOD(z->x+z->w, (int)w), z->y-1, MOD(z->x+z->w, (int)w), z->y+z->h, r, g, b);
     }
 }
 
