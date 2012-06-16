@@ -9,33 +9,63 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <glib.h>
+#include <time.h>
 
 #include "video.h"
 #include "video_params.h"
 #include "tools.h"
 #include "process_video.h"
+#include "process_position.h"
 #include "param.h"
 #include "gv.h"
 #include "context.h"
 
 // TODO: si on fourni un fichier de sauvegarde, il faut charger et sauvegarder les paramètres
 
+#ifdef FROM_FILE
+char buf_[640*480*3];
+#endif
+
 int update(context_t *ctx) {
+    sZone *l;
+
 //printf(".\n");
 
     ctx->curbuffer ^= 1;    // change current buffer
+    
+    CLOCK_STEP(ctx->clock_ref, "debut");
 
     // get current frame
     video_read(&ctx->cam, ctx->buffers[ctx->curbuffer]);
 
-    // update media
-    analyse_update(ctx, ctx->buffers[ctx->curbuffer]);
 
-    return TRUE;
+    CLOCK_STEP(ctx->clock_ref, "video_read");
+
+#ifdef FROM_FILE
+memcpy(ctx->buffers[ctx->curbuffer], buf_, 640*480*3);
+ctx->width = 640;
+ctx->height = 480;
+#endif
+
+    // update media
+    l = process_video(ctx, ctx->buffers[ctx->curbuffer], ctx->width, ctx->height);
+    
+    CLOCK_STEP(ctx->clock_ref, "process video");
+
+    // update position
+    process_position(ctx, l);
+
+    CLOCK_STEP(ctx->clock_ref, "process position");
+
+    zone_del_all(l);
+
+    return TRUE;    // handled
 }
 
 int main(int argc, char *argv[]) {
     context_t ctx;
+    
+    CLOCK_INIT(ctx.clock_ref);
 
     bzero(&ctx, sizeof(ctx));
 
@@ -79,7 +109,11 @@ int main(int argc, char *argv[]) {
 
     // init video pics handlers
     // add some video sources
-    analyse_init(&ctx);
+    process_video_init(&ctx);
+
+    // init position handlers
+    // add some video sources
+    process_position_init(&ctx);
 
     // add parameters of the camera
     {
@@ -87,8 +121,23 @@ int main(int argc, char *argv[]) {
         video_add_cam_params(&ctx.cam, gid);
     }
 
+#ifdef FROM_FILE
+    do {
+        FILE *f = fopen(argv[2], "rb+");
+        if(!f) {
+            printf("!f (%s)\n", argv[2]);
+            getchar();
+            break;
+        }
+
+        fread(buf_, 640*3, 480, f);
+
+        fclose(f);
+    } while(0);
+#endif
+
     // setup periodic update
-#if 0
+#if 0 || defined(FROM_FILE)
 // in this case (user-fixed framerate), you would enable the select in video_read
     g_timeout_add(1000/1, (GSourceFunc)update, &ctx);
 #else

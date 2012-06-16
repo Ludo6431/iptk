@@ -11,10 +11,6 @@ GtkWidget *_gv_window;
         GtkWidget *_gv_nbmedia; // notebook
         GtkWidget *_gv_nbparams;    // notebook
 
-//void quit(
-
-int process = 0;
-
 void key_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     unsigned int k;
 
@@ -23,12 +19,8 @@ void key_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
     if (k < 0xff) {
         switch (k) {
         case 'g':		/* grab a raw image */
-//            grab = 1;
-            process = 1;
-            media_RawDump();
+            _media_RawDump();
             break;
-        case 'p':		/* process a raw image */
-            process = 1;
         default:
             break;
         }
@@ -36,6 +28,8 @@ void key_event(GtkWidget *widget, GdkEvent *event, gpointer data) {
 }
 
 void gv_init(int *pargc, char **pargv[], char *wtitle, char *help) {
+    GdkColor bg = {0, 32768, 32768, 32768};
+
     // init GUI
     gtk_init(pargc, pargv);
 
@@ -51,6 +45,7 @@ void gv_init(int *pargc, char **pargv[], char *wtitle, char *help) {
 
             // the notebook for the media
             _gv_nbmedia = gtk_notebook_new();
+            gtk_widget_modify_bg(GTK_WIDGET(_gv_nbmedia), GTK_STATE_NORMAL, &bg);
             gtk_container_add(GTK_CONTAINER(_gv_hbox), _gv_nbmedia);
 
                 // the help first page

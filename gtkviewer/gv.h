@@ -15,7 +15,5 @@ extern GtkWidget *_gv_window;
 void    gv_init (int *pargc, char **pargv[], char *wtitle, char *help);
 void    gv_run  ();
 
-extern int process;
-
 #endif
 

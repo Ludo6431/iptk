@@ -174,6 +174,7 @@ sZone *step_hsweep(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *
     if(!zl)
         zl = zone_new(y, 0, iw+SZ_MAX, h, 0);   // TODO : à créer dans process, on peut enlever y et h
 
+    // balayage sur <zl> pour une largeur <sz> qui diminue
     for(sz = SZ_MAX; sz>=SZ_MIN; sz>>=1) {
         nzl = NULL;
 
@@ -213,6 +214,14 @@ printf("   ~j=%d | v=%d\n", j, v);
 
         zl = nzl;
     }
+
+    // double the size of the zones
+    for(z = zl; z; z = z->next) {
+        z->x -= z->w>>1;
+        z->w += z->w;
+    }
+
+    zl = zone_hshrink(zl, 1 /* sort before */);
 
     return zl;
 }
@@ -300,7 +309,7 @@ sZone *step_vedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
                         printf("max detected %d@%d\n", max, jmax);
 #endif
 
-                        nzl = zone_prepend(nzl, zone_new_v(intg, iw, ih, z->y, jmin + w/2, jmax - jmin + 1, z->h));
+                        nzl = zone_prepend(nzl, zone_new_v(intg, iw, ih, z->y, jmin + (w>>1), jmax - jmin, z->h));
                     }
 
                     etat*=-1;
@@ -392,7 +401,7 @@ sZone *step_hedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
                     etat*v_next <= etat*v_current   // the new/next extremum is not better than the current one ...
                     && abs(v_current) >= z->v/20    // ... and it is far from 0
                     && (
-                        (etat == 1 && abs(v_current+min) < -min/4)     // the maximum must be of the same order of the previous minimum
+                        (etat == 1 && abs(v_current+min) < -min/3)     // the maximum must be of the same order of the previous minimum
                         || (etat == -1 && v_current < 0)        // the minimum must be negative
                     )
                 ) {  // ... yes, found local extremum
@@ -412,7 +421,7 @@ sZone *step_hedge(unsigned int *intg, unsigned int iw, unsigned int ih, sZone *z
                         printf("max detected %d@%d\n", max, imax);
 #endif
 
-                        nzl = zone_prepend(nzl, zone_new_v(intg, iw, ih, imin + h/2, z->x, z->w, imax - imin + 1));
+                        nzl = zone_prepend(nzl, zone_new_v(intg, iw, ih, imin + (h>>1), z->x, z->w, imax - imin));
                     }
 
                     etat*=-1;

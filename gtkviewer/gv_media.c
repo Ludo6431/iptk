@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
+#include <string.h>
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -10,7 +11,7 @@
 
 #include "gv_media.h"
 
-void media_RawDump() {
+void _media_RawDump() {
     GdkPixbuf *pb;
     GtkWidget *image;
     FILE *fd;
@@ -35,7 +36,8 @@ void media_RawDump() {
     if(rowstride != width*3)
         return;
 
-    snprintf(fn, sizeof(fn), "dump-%s-%dx%d-%s.data", gtk_label_get_text(GTK_LABEL(gtk_notebook_get_tab_label(GTK_NOTEBOOK(_gv_nbmedia), image))), width, height, date);
+    snprintf(fn, sizeof(fn)-5, "dump-%s-%s-%dx%d", gtk_label_get_text(GTK_LABEL(gtk_notebook_get_tab_label(GTK_NOTEBOOK(_gv_nbmedia), image))), date, width, height);
+    strcat(fn, ".data");
 
     fd = fopen(fn, "wb+");
     if(!fd)
@@ -56,41 +58,9 @@ printf("height: %d\n", gdk_pixbuf_get_height(pb));
 printf("rowstride: %d\n", gdk_pixbuf_get_rowstride(pb));*/
 }
 
-//void media_onBmpDump(
-/*
-int media_onButtonPress(GtkWidget *image, GdkEventButton *event, gpointer userdata) {
-g_print(".\n");
-    if(event->type == GDK_BUTTON_PRESS && event->button==3) {
-        GtkWidget *menu, *menuitem;
-
-        g_print("Right click\n");
-
-        menu = gtk_menu_new();
-
-        menuitem = gtk_menu_item_new_with_label("Dump raw data to file");
-        g_signal_connect(menuitem, "activate", G_CALLBACK(media_onRawDump), image);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
-        gtk_widget_show(menuitem);
-
-        menuitem = gtk_menu_item_new_with_label("Dump to bitmap file");
-        g_signal_connect(menuitem, "activate", G_CALLBACK(media_onBmpDump), image);
-        gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
-        gtk_widget_show(menuitem);
-
-        gtk_widget_show(menu);
-
-        gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL, event->button, gdk_event_get_time((GdkEvent *)event));
-
-        return TRUE; // we handled this
-    }
-
-    return FALSE;   // we didn't
-}
-*/
 int gv_media_new(char *name, char *desc, unsigned int width, unsigned int height) {
     GtkWidget *label = gtk_label_new(name);
     gtk_widget_set_tooltip_text(label, desc);
-printf("__%dx%d__\n", width, height);
 
     GdkPixbuf *pb_video = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
     GtkWidget *content = gtk_image_new_from_pixbuf(pb_video);

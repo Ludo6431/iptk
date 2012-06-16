@@ -1,6 +1,8 @@
 #ifndef _GV_PARAMS_H
 #define _GV_PARAMS_H
 
+#include "param.h"
+
 // group of parameters
 int         gv_gparam_new       (char *gname, char *gdesc);
 void        gv_gparam_del       (int gid);

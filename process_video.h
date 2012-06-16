@@ -1,10 +1,11 @@
-#ifndef _PROCESS_H
-#define _PROCESS_H
+#ifndef _PROCESS_VIDEO_H
+#define _PROCESS_VIDEO_H
 
 #include "context.h"
+#include "zones.h"
 
-void analyse_init(context_t *ctx);
-void analyse_update(context_t *ctx, unsigned char *data);
+void process_video_init(context_t *ctx);
+sZone *process_video(context_t *ctx, unsigned char *rw_data, unsigned int rw_w, unsigned int rw_h);
 
 #endif
 

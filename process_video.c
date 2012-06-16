@@ -8,6 +8,7 @@
 #include "steps.h"
 #include "zones.h"
 #include "video_draw.h"
+#include "clock.h"
 
 #include "process_video.h"
 
@@ -20,19 +21,19 @@ int rw_mid;
 int ud_mid;
 int ud_gp;
 param_t ud_pdiameter, ud_pcx, ud_pcy;
-volatile unsigned int ud_diameter = 480, ud_cx = 640>>1, ud_cy = 480>>1;
+volatile unsigned int ud_diameter = 480, ud_cx = 300/*640>>1*/, ud_cy = 230/*480>>1*/;
 
 // ----------------------------------------------------------------------------
 // horizontal sweep
 int hs_gp;
 param_t hs_pthreshold;
-volatile unsigned int hs_threshold = 5000;
+volatile unsigned int hs_threshold = 4000;
 
 // ----------------------------------------------------------------------------
 // vertical edge
 int ve_gp;
 param_t ve_pwidth;
-volatile unsigned int ve_width = 6;
+volatile unsigned int ve_width = 10;
 
 // ----------------------------------------------------------------------------
 // horizontal edge
@@ -49,7 +50,7 @@ param_t cl_pc, cl_pTHR0, cl_pTHR1;
 volatile unsigned int cl_c = 240, cl_THR0 = 60, cl_THR1 = 25;
 #endif
 
-void analyse_init(context_t *ctx) {
+void process_video_init(context_t *ctx) {
 // ----------------------------------------------------------------------------
 // raw
     rw_mid = gv_media_new("raw", "Caméra sans traitement", ctx->width, ctx->height);
@@ -137,7 +138,7 @@ float y2rho(float y) {
 }
 #endif
 
-void analyse_update(context_t *ctx, unsigned char *rw_data) {
+sZone *process_video(context_t *ctx, unsigned char *rw_data, unsigned int rw_w, unsigned int rw_h) {
 // do not destroy this <rw_data> argument
 
 // ----------------------------------------------------------------------------
@@ -149,23 +150,54 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
 #ifdef OLD_UNDIS
     ud_h = ud_diameter>>1;
 #else
-
     float v = rho2y(240)-rho2y(240-65);
-
-    printf("ud_h = %f\n", v);
 
     ud_h = (int)v;
 
+#ifdef DEBUG_PROCESS_VIDEO
+    printf("ud_h = %f\n", v);
     printf("ud_h = %d\n", ud_h);
 #endif
+#endif
 
-    ud_data = step_undis(rw_data, ctx->width, ctx->height, ud_diameter, ud_cx, ud_cy);
+    CLOCK_STEP(ctx->clock_ref, "###");
+
+    ud_data = step_undis(rw_data, rw_w, rw_h, ud_diameter, ud_cx, ud_cy);
+
+    CLOCK_STEP(ctx->clock_ref, "step_undis");
 
 // ----------------------------------------------------------------------------
 // integ
     unsigned int *intg = (unsigned int *)malloc(ud_w*ud_h*sizeof(unsigned int));
 
     integ_rgb(intg, ud_data, ud_w, ud_h, ud_w*3, 2);   // integral of blue component
+
+    CLOCK_STEP(ctx->clock_ref, "step_integ");
+
+#ifdef STEP_COLOR
+// ----------------------------------------------------------------------------
+// color
+    unsigned char *cl_data;
+    cl_data = step_color(ud_data, ud_w, ud_h);
+    gv_media_update(cl_mid, cl_data, ud_w, ud_h, (gv_destroy)free, NULL);
+#endif
+
+    CLOCK_STEP(ctx->clock_ref, "###");
+
+// "little" step to show the picture in grayscale
+    {
+        int i;
+        unsigned char c, *p = ud_data;
+        for(i=0; i<ud_h*ud_w; i++) {
+                c = 255 - p[2];
+
+                *p++ = c;
+                *p++ = c;
+                *p++ = c;
+            }
+    }
+
+    CLOCK_STEP(ctx->clock_ref, "to grayscale");
 
 // ----------------------------------------------------------------------------
 // horizontal sweep
@@ -176,101 +208,115 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
     hs_zl = step_hsweep(intg, ud_w, ud_h, NULL, 20, 145, hs_threshold);
 #endif
 
-#ifdef DEBUG_HSWEEP
+    CLOCK_STEP(ctx->clock_ref, "step_hsweep");
+
+#ifdef DEBUG_PROCESS_VIDEO
     printf("hsweep zones:\n");
-    zone_print_all(hs_zl, "  ");
-#endif
-
-    {
-        sZone * l = hs_zl;
-        for(; l; l = l->next) {
-#if 0
-            // multiply by 1.5 the size of the zone
-            l->x -= l->w>>2;
-            l->w += l->w>>1;
-#else
-            // double the size of the zone
-            l->x -= l->w>>1;
-            l->w += l->w;
-#endif
-        }
-
-        hs_zl = zone_hshrink(hs_zl, 1 /* sort */);
-    }
-
-    printf("hsweep zones (enlarge + hshrink):\n");
 //    zone_print_all(hs_zl, "  ");
+#endif
 
     {
 #ifdef DEBUG_DUMP_ZONES
         printf("hsweep zones data:\n");
 #endif
-        sZone * l = hs_zl;
+        sZone *l = hs_zl;
         for(; l; l = l->next) {
+#ifdef DEBUG_PROCESS_VIDEO
             printf("  "); zone_print(l); printf("\n");
 #ifdef DEBUG_DUMP_ZONES
             dump_rgb_b(ud_data, dw, dh, l->y, l->x, l->w, l->h);
+#endif
 #endif
 
             zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 255, 0, 0);   // red boxes
         }
     }
 
+    CLOCK_STEP(ctx->clock_ref, "###");
+
 // ----------------------------------------------------------------------------
 // vertical edge
     sZone *ve_zl;
     ve_zl = step_vedge(intg, ud_w, ud_h, hs_zl, ve_width);
 
+    CLOCK_STEP(ctx->clock_ref, "step_vedge");
+
+#ifdef DEBUG_PROCESS_VIDEO
     printf("vedge zones:\n");
     zone_print_all(ve_zl, "  ");
+#endif
 
     {
-        sZone * l = ve_zl;
+        sZone *l = ve_zl;
         for(; l; l = l->next)
             zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 0, 255, 0);   // green boxes
     }
+
+    CLOCK_STEP(ctx->clock_ref, "###");
 
 // ----------------------------------------------------------------------------
 // horizontal edge
     sZone *he_zl;
     he_zl = step_hedge(intg, ud_w, ud_h, ve_zl, he_height);
 
+#ifdef DEBUG_PROCESS_VIDEO
     printf("hedge zones:\n");
     zone_print_all(he_zl, "  ");
+#endif
 
     {
-        sZone * l = he_zl;
+        sZone *l = he_zl;
         for(; l; l = l->next)
-            zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 255, 255, 0); // yellow boxes
+            zone_video_draw(ud_data, ud_w, ud_h, ud_w*3, l, 0, 0, 255); // blue boxes
     }
+
+    CLOCK_STEP(ctx->clock_ref, "step_hedge");
 
 // ----------------------------------------------------------------------------
 // detection
+#ifdef DEBUG_PROCESS_VIDEO
     printf("detect zones:\n");
+#endif
     {
-        sZone * l = he_zl;
+        sZone *l = he_zl;
         for(; l; l = l->next) {
             int v;
 
             // print zone
+#ifdef DEBUG_PROCESS_VIDEO
             zone_print(l); printf("\n");
 
             // print zone h/w ratio
             printf("  %.2f\n", (float)l->h/(float)l->w);
+#endif
 
             v = zone_pat_hedge(intg, ud_w, ud_h, l);
 
-            if(v > l->v/20) {
+            // print
+#ifdef DEBUG_PROCESS_VIDEO
+            printf("  %.2f\n", (float)v*100./(float)l->v);
+#endif
+
+            if(v > l->v/10) {
                 // up
+#ifdef DEBUG_PROCESS_VIDEO
                 printf("up\n");
+#endif
+                l->v = 2;
             }
-            else if(v < -l->v/20) {
+            else if(v < -l->v/10) {
                 // down
+#ifdef DEBUG_PROCESS_VIDEO
                 printf("down\n");
+#endif
+                l->v = 0;
             }
             else {
                 // center
+#ifdef DEBUG_PROCESS_VIDEO
                 printf("center\n");
+#endif
+                l->v = 1;
             }
         }
     }
@@ -278,25 +324,19 @@ void analyse_update(context_t *ctx, unsigned char *rw_data) {
 // free temporary data
     zone_del_all(hs_zl);
     zone_del_all(ve_zl);
-    zone_del_all(he_zl);
+//    zone_del_all(he_zl);
     free(intg);
 
 // undistort update (with the zones displayed)
     gv_media_update(ud_mid, ud_data, ud_w, ud_h, (gv_destroy)free, NULL);
 
-#ifdef STEP_COLOR
-// ----------------------------------------------------------------------------
-// color
-    unsigned char *cl_data;
-    cl_data = step_color(ud_data, ud_w, ud_h);
-    gv_media_update(cl_mid, cl_data, ud_w, ud_h, (gv_destroy)free, NULL);
-#endif
-
 // ----------------------------------------------------------------------------
 // raw
-    video_draw_cross(rw_data, ctx->width*3, ctx->height, ud_cx, ud_cy, ud_diameter>>3, 255, 0, 0);
-    video_draw_circle(rw_data, ctx->width*3, ctx->height, ud_cx, ud_cy, ud_diameter>>1, 255, 0, 0);
+    video_draw_cross(rw_data, rw_w, rw_h, rw_w*3, ud_cx, ud_cy, ud_diameter>>3, 255, 0, 0);
+    video_draw_circle(rw_data, rw_w, rw_h, rw_w*3, ud_cx, ud_cy, ud_diameter>>1, 255, 0, 0);
 
-    gv_media_update(rw_mid, rw_data, ctx->width, ctx->height, (gv_destroy)NULL, NULL);
+    gv_media_update(rw_mid, rw_data, rw_w, rw_h, (gv_destroy)NULL, NULL);
+
+    return he_zl;
 }
 

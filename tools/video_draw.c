@@ -12,8 +12,13 @@ void video_draw_pixel(unsigned char *rgb, unsigned int rowstride, unsigned int h
     }
 }
 
-void video_draw_line(unsigned char *rgb, unsigned int rowstride, unsigned int h, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned char r, unsigned char g, unsigned char b) {
+void video_draw_line(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned char r, unsigned char g, unsigned char b) {
     // Bresenham algorithm
+
+    x0 = CLAMP(0, x0, w-1);
+    y0 = CLAMP(0, y0, h-1);
+    x1 = CLAMP(0, x1, w-1);
+    y1 = CLAMP(0, y1, h-1);
 
     int dx = abs((int)x1-(int)x0), sx = x0<x1 ? 1 : -1;
     int dy = abs((int)y1-(int)y0), sy = y0<y1 ? 1 : -1; 
@@ -29,12 +34,12 @@ void video_draw_line(unsigned char *rgb, unsigned int rowstride, unsigned int h,
     }
 }
 
-void video_draw_cross(unsigned char *rgb, unsigned int rowstride, unsigned int h, unsigned int x, unsigned int y, unsigned int size, unsigned char r, unsigned char g, unsigned char b) {
-    video_draw_line(rgb, rowstride, h, x-size, y, x+size, y, r, g, b);
-    video_draw_line(rgb, rowstride, h, x, y-size, x, y+size, r, g, b);
+void video_draw_cross(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, unsigned int x, unsigned int y, unsigned int size, unsigned char r, unsigned char g, unsigned char b) {
+    video_draw_line(rgb, w, h, rowstride, x-size, y, x+size, y, r, g, b);
+    video_draw_line(rgb, w, h, rowstride, x, y-size, x, y+size, r, g, b);
 }
 
-void video_draw_circle(unsigned char *rgb, unsigned int rowstride, unsigned int h, unsigned int xc, unsigned int yc, unsigned int ray, unsigned char r, unsigned char g, unsigned char b) {
+void video_draw_circle(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, unsigned int xc, unsigned int yc, unsigned int ray, unsigned char r, unsigned char g, unsigned char b) {
     unsigned int x= ray, y= 0;//local coords     
     int          cd2= 0;    //current distance squared - radius squared
 
@@ -62,20 +67,20 @@ void video_draw_circle(unsigned char *rgb, unsigned int rowstride, unsigned int 
 void video_draw_box_ovr(unsigned char *rgb, unsigned int w, unsigned int h, unsigned int rowstride, int bx, int by, int bw, int bh, unsigned char r, unsigned char g, unsigned char b) {
     if((bx < w && bx + bw > w) || (bx < 0 && bx + bw > 0)) {
         // right
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, w-1, by, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by+bh-1, w-1, by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by, w-1, by, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by+bh-1, w-1, by+bh-1, r, g, b);
 
         // left
-        video_draw_line(rgb, rowstride, h, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, by, MOD(bx+bw-1, (int)w), by, r, g, b);
-        video_draw_line(rgb, rowstride, h, 0, by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, 0, by, MOD(bx+bw-1, (int)w), by, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, 0, by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
     }
     else {
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by, MOD(bx+bw-1, (int)w), by, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(bx, (int)w), by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
-        video_draw_line(rgb, rowstride, h, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by, MOD(bx, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by, MOD(bx+bw-1, (int)w), by, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx, (int)w), by+bh-1, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
+        video_draw_line(rgb, w, h, rowstride, MOD(bx+bw-1, (int)w), by, MOD(bx+bw-1, (int)w), by+bh-1, r, g, b);
     }
 }
 
