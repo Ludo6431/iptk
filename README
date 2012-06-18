@@ -16,6 +16,10 @@ NOTE
     prendra place sur github à l'adresse :
         https://github.com/Ludo6431/ProjetSynthese2A
 
+BIBLIO
+    "Video for Linux Two API Specification" http://v4l2spec.bytesex.org/spec/
+    "Simple Video Viewer" (aka svv) http://moinejf.free.fr/
+
 CODE
     * main.c
         Point d'entrée du code, initialisations, acquisition vidéo
