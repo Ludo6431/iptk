@@ -1,15 +1,22 @@
-Code du projet de synthèse de deuxième année d'étude
-à l'Ecole Nationale de l'Aviation Civile.
+INTRODUCTION
+    Code du projet de synthèse de deuxième année d'étude
+    à l'Ecole Nationale de l'Aviation Civile.
 
-par Quentin Vey et Ludovic Lacoste, IENAC10L
+    par Quentin Vey <vey.quentin@gmail.com>
+    et Ludovic Lacoste <ludovic.lacoste@gmail.com>
+    deux IENAC10L
 
+    Il s'agit de l'implémentation d'un algorithme de traitement
+    d'images appliqué à la reconnaissance d'amers visuels.
+    Ce code est fait en C et a été développé sous linux.
 
-Il s'agit de l'implémentation d'un algorithme de traitement
-d'images appliqué à la reconnaissance d'amers visuels.
-Ce code est fait en C et a été développé sous linux.
+NOTE
+    Cette version a été rendue à nos encadrants au terme de notre
+    projet. La suite du développement de cette application
+    prendra place sur github à l'adresse :
+        https://github.com/Ludo6431/ProjetSynthese2A
 
-
-Aménagement du code :
+CODE
     * main.c
         Point d'entrée du code, initialisations, acquisition vidéo
 
@@ -26,19 +33,22 @@ Aménagement du code :
     * process_video.{c,h}
         Fonction principale d'appels aux traitements et calculs vidéo
 
+    * process_position.{c,h}
+        Fonction principale d'appels aux traitements et calculs de position
+
     * Makefile
         Fichier de paramétrage de la compilation
 
-Dépendances :
-    video4linux2
-    gtk
+DEPENDS
+    * video4linux2
+    * gtk 2
 
-Compilation :
+BUILD
     Une fois les versions de développement des dépendances ci-dessus instalées,
     il suffit de taper :
         make
 
-Exécution :
+EXECUTE
     Le programme peut prendre en premier paramètre le chemin d'accès
     au périphérique vidéo, tel que /dev/video0
 
