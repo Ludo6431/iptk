@@ -5,7 +5,7 @@
 #include "tools.h"
 #include "gv.h"
 #include "integ.h"
-#include "steps.h"
+#include "process_video_steps.h"
 #include "zones.h"
 #include "video_draw.h"
 #include "clock.h"

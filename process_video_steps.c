@@ -7,7 +7,7 @@
 #include "zones.h"
 #include "patterns.h"
 
-#include "steps.h"
+#include "process_video_steps.h"
 
 unsigned char *step_undis(unsigned char *data, unsigned int sw, unsigned int sh, unsigned int dd, unsigned int dcx, unsigned int dcy) {
     unsigned int dw = dd*M_PI;

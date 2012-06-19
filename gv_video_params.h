@@ -1,5 +1,5 @@
-#ifndef _VIDEO_PARAMS_H
-#define _VIDEO_PARAMS_H
+#ifndef _GV_VIDEO_PARAMS_H
+#define _GV_VIDEO_PARAMS_H
 
 #include "video.h"
 

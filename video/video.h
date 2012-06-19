@@ -18,7 +18,11 @@ int video_config(struct video_t *vid, struct v4l2_format *fmt);
 int video_read  (struct video_t *vid, void *buffer);
 
 // TODO add video_close
-// TODO add g_io_watch setup
+// TODO add g_io_watch setup; or not
+
+// TODO add video_getparams / video_setparams with framerate + jpegcomp
+
+// TODO, this will be a fully featured middle-level library to deal with v4l2 video capture devices
 
 #endif
 

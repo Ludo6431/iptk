@@ -1,5 +1,5 @@
-#ifndef _PARAMETER_H
-#define _PARAMETER_H
+#ifndef _VIDEO_PARAMS_H
+#define _VIDEO_PARAMS_H
 
 // define parameters types
 typedef enum {

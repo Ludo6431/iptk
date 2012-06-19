@@ -1,6 +1,6 @@
 EXEC := exec
-SRCDIRS := . gtkviewer tools process
-INCDIRS := . gtkviewer tools process
+SRCDIRS := . gtkviewer tools process video
+INCDIRS := . gtkviewer tools process video
 LIBS := -lm
 
 # --

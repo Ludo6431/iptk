@@ -9,7 +9,7 @@
 #include "video.h"
 #include "gv.h"
 
-#include "video_params.h"
+#include "gv_video_params.h"
 
 struct ctrl_data {
     int fd;
@@ -19,37 +19,37 @@ struct ctrl_data {
 
 static void set_ctrl(GtkWidget *widget, struct ctrl_data *ctrl_d)
 {
-	struct v4l2_control ctrl;
+    struct v4l2_control ctrl;
 
-	ctrl.id = ctrl_d->id;
-	ctrl.value = gtk_range_get_value(GTK_RANGE(widget));
-	if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
-		fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
+    ctrl.id = ctrl_d->id;
+    ctrl.value = gtk_range_get_value(GTK_RANGE(widget));
+    if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
+        fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
 }
 
 static void toggle_ctrl(GtkWidget *widget, struct ctrl_data *ctrl_d)
 {
-	struct v4l2_control ctrl;
+    struct v4l2_control ctrl;
 
-	ctrl.id = ctrl_d->id;
-	ctrl.value = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-	if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
-		fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
+    ctrl.id = ctrl_d->id;
+    ctrl.value = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+    if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
+        fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
 }
 
 static void reset_ctrl(GtkButton *b, struct ctrl_data *ctrl_d)
 {
-	struct v4l2_queryctrl qctrl;
-	struct v4l2_control ctrl;
+    struct v4l2_queryctrl qctrl;
+    struct v4l2_control ctrl;
 
-	qctrl.id = ctrl.id = ctrl_d->id;
-	if (ioctl(ctrl_d->fd, VIDIOC_QUERYCTRL, &qctrl) != 0) {
-		fprintf(stderr, "query control error %d, %s\n", errno, strerror(errno));
-		return;
-	}
-	ctrl.value = qctrl.default_value;
-	if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
-		fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
+    qctrl.id = ctrl.id = ctrl_d->id;
+    if (ioctl(ctrl_d->fd, VIDIOC_QUERYCTRL, &qctrl) != 0) {
+        fprintf(stderr, "query control error %d, %s\n", errno, strerror(errno));
+        return;
+    }
+    ctrl.value = qctrl.default_value;
+    if (ioctl(ctrl_d->fd, VIDIOC_S_CTRL, &ctrl) < 0)
+        fprintf(stderr, "set control error %d, %s\n", errno, strerror(errno));
 
     switch (qctrl.type) {
     case V4L2_CTRL_TYPE_INTEGER:

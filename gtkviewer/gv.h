@@ -3,7 +3,6 @@
 
 #include <gtk/gtk.h>
 
-#include "param.h"
 #include "gv_media.h"
 #include "gv_params.h"
 

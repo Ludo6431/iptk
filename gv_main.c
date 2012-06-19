@@ -12,11 +12,11 @@
 #include <time.h>
 
 #include "video.h"
-#include "video_params.h"
+#include "gv_video_params.h"
 #include "tools.h"
 #include "process_video.h"
 #include "process_position.h"
-#include "param.h"
+#include "video_params.h"
 #include "gv.h"
 #include "context.h"
 
