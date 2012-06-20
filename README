@@ -1,20 +1,20 @@
 INTRODUCTION
-    Code du projet de synthèse de deuxième année d'étude
-    à l'Ecole Nationale de l'Aviation Civile.
-
-    par Quentin Vey <vey.quentin@gmail.com>
-    et Ludovic Lacoste <ludovic.lacoste@gmail.com>
-    deux IENAC10L
-
-    Il s'agit de l'implémentation d'un algorithme de traitement
-    d'images appliqué à la reconnaissance d'amers visuels.
+    Application permettant de faire du traitement d'images.
     Ce code est fait en C et a été développé sous linux.
 
 NOTE
-    Cette version a été rendue à nos encadrants au terme de notre
-    projet. La suite du développement de cette application
-    prendra place sur github à l'adresse :
-        https://github.com/Ludo6431/ProjetSynthese2A
+    Ce dépot est la continuité du projet de synthèse
+    de deuxième année d'étude à l'Ecole Nationale de l'Aviation Civile
+    qui a été effectué par
+    Quentin Vey <vey.quentin@gmail.com>
+    et Ludovic Lacoste <ludovic.lacoste@gmail.com>
+    deux Ingénieurs ENAC10L.
+
+    Dans la version rendue au terme du projet, il s'agissait
+    de l'implémentation d'un algorithme de traitement d'images
+    appliqué à la reconnaissance d'amers visuels.
+    Cette version correspond à ce commit :
+        https://github.com/Ludo6431/iptk/tree/ab4a283aadc418152be41a5c56c3a081e9924fe2
 
 BIBLIO
     "Video for Linux Two API Specification" http://v4l2spec.bytesex.org/spec/
