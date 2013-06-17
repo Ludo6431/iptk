@@ -1,18 +1,18 @@
-EXEC := exec
-SRCDIRS := . gtkviewer tools process video
-INCDIRS := . gtkviewer tools process video
-LIBS := -lm
+EXEC = exec
+SRCDIRS = . gtkviewer tools process video
+INCDIRS = . gtkviewer tools process video
+LIBS = -lm -lrt
 
 # --
 
-CFILES := $(foreach dir,$(SRCDIRS),$(wildcard $(dir)/*.c))
-OBJS := $(CFILES:.c=.o)
-INCPARAMS := $(foreach dir,$(INCDIRS),-I$(CURDIR)/$(dir))
+CFILES = $(foreach dir,$(SRCDIRS),$(wildcard $(dir)/*.c))
+OBJS = $(CFILES:.c=.o)
+INCPARAMS = $(foreach dir,$(INCDIRS),-I$(CURDIR)/$(dir))
 
-CC := gcc
-CFLAGS := -Wall -g $(INCPARAMS) `pkg-config gtk+-2.0 libv4lconvert --cflags` -DDEBUG
+CC = gcc
+CFLAGS = -Wall -g $(INCPARAMS) `pkg-config gtk+-2.0 libv4lconvert --cflags` -DDEBUG
 #-O2
-LDFLAGS := $(LIBS) `pkg-config gtk+-2.0 libv4lconvert --libs`
+LDFLAGS = $(LIBS) `pkg-config gtk+-2.0 libv4lconvert --libs`
 
 # debug
 #CFLAGS += -DFROM_FILE
@@ -25,17 +25,14 @@ LDFLAGS := $(LIBS) `pkg-config gtk+-2.0 libv4lconvert --libs`
 all:$(EXEC)
 
 clean:
-	rm $(EXEC) $(OBJS)
+	@echo "RM"
+	@rm $(EXEC) $(OBJS)
 
 %.o:%.c
-	@echo -e "\x1b[32m"$@"...\x1b[0m"
-	@echo -ne "\x1b[33m"
+	@echo "CC -o $@"
 	@$(CC) $(CFLAGS) -c $< -o $@
-	@echo -ne "\x1b[0m"
 
 $(EXEC):$(OBJS)
-	@echo -e "\x1b[32m"$@"...\x1b[0m"
-	@echo -ne "\x1b[33m"
-	@$(CC) $(LDFLAGS) -o $@ $(OBJS)
-	@echo -ne "\x1b[0m"
+	@echo "LD -o $@"
+	@$(CC) -o $@ $^ $(LDFLAGS)
 
